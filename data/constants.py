@@ -1,7 +1,15 @@
-mapWidth  = 10
-mapHeight = 10
+mapWidth  = 25
+mapHeight = 20
 tileSize  = 40
 SCREEN_SIZE = (800, 608)
+
+
+##Tile ID
+
+grass = 0
+water = 1
+stone = 2
+road = 3
 
 ##GAME STATES
 

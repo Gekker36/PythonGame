@@ -8,4 +8,4 @@ if __name__ =='__main__':
     setup.GAME
     main()
     pg.quit()
-    sys.exit()
+    # sys.exit()

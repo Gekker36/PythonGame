@@ -17,12 +17,12 @@ class Level(tools._State):
         # super(Level, self).__init__()
 
         # self.music_title = 'kings_theme'
-        # self.volume = 0.4
+        self.volume = 0.4
         # self.next = c.INSTRUCTIONS
-        self.name = c.LEVEL
+        # self.name = c.LEVEL
         # self.startup(0, 0)
     
-    def startup(self, *args):
+    # def startup(self, *args):
 #         self.renderer = tilerender.Renderer(self.tmx_map)
 #         self.map_image = self.renderer.make_2x_map()
 #         self.map_rect = self.map_image.get_rect()
