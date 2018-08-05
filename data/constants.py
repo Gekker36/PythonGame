@@ -11,6 +11,13 @@ water = 1
 stone = 2
 road = 3
 
+##Colors
+white = (255,255,255)
+black = (0,0,0)
+green = (0,255,0)
+blue = (0,0,255)
+brown = (153,76,0)
+
 ##GAME STATES
 
 LEVEL = 'level'

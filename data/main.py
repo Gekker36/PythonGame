@@ -1,61 +1,12 @@
 from data.states import  level #, death, shop, levels, battle,
 # from data.states import credits
-from . import setup, tools, inputcontroller, worldgenerator, player
+from . import setup, tools, inputcontroller, player
 from . import constants as c
 import pygame as pg
 import random
 
 
-LEVEL ='level'
-TOWN = 'town'
 
-INVFONT=pg.font.SysFont('arial',18)
-
-
-
-def main():
-    """Add states to control here"""
-    
-    
-print("Loading images")
-tile_grass = setup.TMX['Grass']
-tile_water = setup.TMX['Water']
-tile_stone = setup.TMX['Stone']
-# player = setup.GFX['Player']
-bullet = setup.GFX['Bullet']
-
-
-tileSize = 40
-
-grass = 0
-water = 1
-stone = 2
-resources = [grass, water, stone]
-tileTextures = {grass:tile_grass, water: tile_water, stone: tile_stone}
-
-white = (255,255,255)
-black = (0,0,0)
-green = (0,255,0)
-blue = (0,0,255)
-brown = (153,76,0)
-
-
-
-        
-
-# playerPos = [int(c.mapWidth/2),int(c.mapHeight/2)]
-inventory = {grass: 0, water: 0, stone: 0}
-
-
-DISPLAYSURF = pg.display.set_mode((c.mapWidth*tileSize, c.mapHeight*tileSize+50))
-
-
-
-# for row in range(c.mapHeight):
-#     for column in range(c.mapWidth):
-#         DISPLAYSURF.blit(tileTextures[tilemap[row][column]],(column*tileSize,(row*tileSize)+50))
-   
-pgClock = pg.time.Clock()
 
 class Player(object):
     def __init__(self):
@@ -67,57 +18,118 @@ class Player(object):
         self.rect.x = 0
         self.rect.y = 0
         self.direction = 2
+        self.inventory = {'Grass': 0, 'Water': 0, 'Stone': 0}
 
 class Tile(object):
     def __init__(self,x,y,tileType):
         pg.sprite.Sprite.__init__(self)
         self.tileType = tileType
-        self.image = tileTextures[self.tileType]
+        self.image = setup.TMX[tileType]
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-
-
-
-tilemap = [[Tile(w,h,0) for w in range(c.mapWidth)] for h in range(c.mapHeight)]
-
-for h in range(c.mapHeight):
-    for w in range(c.mapWidth):
-        if random.randint(1,100)<15 :
-            tilemap[h][w]= Tile(w,h,1)
-        # if random.randint(1,100)<15 :
-        #     tilemap[h][w]= m.Tile(w,h,0)
-
-player = Player()
- 
-
-run=True
-while run:
-
-    inputcontroller.playerInput()
-    fpsTimer=pgClock.tick(60)
-            
-    for row in range(c.mapHeight):
-        for column in range(c.mapWidth):
-            DISPLAYSURF.blit(tilemap[row][column].image,(column*tileSize,(row*tileSize)+50))
-            
-   
-
-    
-    DISPLAYSURF.blit(player.image, (player.rect.x*tileSize,player.rect.y*tileSize+50))
-    
-    # Draw GUI
-    placePosition = 10
-    for item in resources:
-        DISPLAYSURF.blit(tileTextures[item], (placePosition, 5))
-        placePosition += 50
-        textObj = INVFONT.render(str(inventory[item]), True, white, black)
-        fpsClock = INVFONT.render(str(int(pgClock.get_fps())), True, white, black)
-        DISPLAYSURF.blit(textObj, (placePosition,16))
-        placePosition +=60
         
-    DISPLAYSURF.blit(fpsClock, (placePosition,16))
-    pg.display.update()
+    def updateTile(self):
+        self.image = setup.TMX[self.tileType]
+        
+        
+class World(object):
+    def __init__(self):
+        self.mapHeight = c.mapHeight
+        self.mapWidth = c.mapWidth
+        self.worldGenerator()
+        self.tilemap
+    
+    def worldGenerator(self):
+        print("Create tilemap")
+        self.tilemap = [[Tile(w,h,'Grass') for w in range(self.mapWidth)] for h in range(self.mapHeight)]
+        
+        for h in range(self.mapHeight):
+            for w in range(self.mapWidth):
+                if random.randint(1,100)<15 :
+                    self.tilemap[h][w]= Tile(w,h,'Water')
+                if random.randint(1,100)<15 :
+                    self.tilemap[h][w]= Tile(w,h,'Stone')
+
+class GUI(object):
+    def __init__(self):
+        self.font = pg.font.SysFont('arial',18)
+
+        
+    
+    def make_dialogue_box(self):
+        image = setup.TMX['Stone']
+        rect = image.get_rect()
+        surface = pg.Surface(rect.size)
+        surface.set_colorkey(c.black)
+        surface.blit(image, rect)
+        surface.blit(image, rect)
+        dialogue = self.font.render("Schrijf hier text",
+                                    True,
+                                    c.black)
+        dialogue_rect = dialogue.get_rect(left=50, top=50)
+        surface.blit(dialogue, dialogue_rect)
+        sprite = pg.sprite.Sprite()
+        sprite.image = surface
+        sprite.rect = rect
+        return sprite
+        
+        
     
 
+def main():
+    
+    print("Starting Main")
+    
+    DISPLAYSURF = pg.display.set_mode((c.mapWidth*c.tileSize, c.mapHeight*c.tileSize+50))
+    pgClock = pg.time.Clock()
+    
+    print("Create world")
+    world = World()
+    
+    print("Create player")
+    player = Player()
+    
+    print("Create GUI")
+    gui = GUI()
+    
+    print("Start gameplay loop")
+    run=True
+    
+    '''
+    Main gameloop
+    '''
+    
+    while run:
+    
+        inputcontroller.playerInput(player, world)
+    #     # fpsTimer=pgClock.tick(60)
+                
+        for row in range(c.mapHeight):
+            for column in range(c.mapWidth):
+                DISPLAYSURF.blit(world.tilemap[row][column].image,(column*c.tileSize,(row*c.tileSize)+50))
+                
+    
+    
+        
+        DISPLAYSURF.blit(player.image, (player.rect.x*c.tileSize,player.rect.y*c.tileSize+50))
+        gui.make_dialogue_box()
+        DISPLAYSURF.blit(player.image, (player.rect.x*c.tileSize,player.rect.y*c.tileSize+50))
+        
+        # Draw GUI
+        # placePosition = 10
+        # for item in player.inventory:
+        #     DISPLAYSURF.blit(setup.TMX[item], (placePosition, 5))
+        #     placePosition += 50
+        #     textObj = gui.render(str(player.inventory[item]), True, c.white, c.black)
+        #     DISPLAYSURF.blit(textObj, (placePosition,16))
+        #     placePosition +=60
+            
+        # fpsClock = gui.render(str(int(pgClock.get_fps())), True, c.white, c.black)   
+        # DISPLAYSURF.blit(fpsClock, (placePosition,16))
+        pg.display.update()
+    
+    
+    
+    
     
