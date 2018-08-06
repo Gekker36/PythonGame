@@ -1,6 +1,6 @@
 mapWidth  = 25
 mapHeight = 20
-tileSize  = 40
+tileSize  = 16
 SCREEN_SIZE = (800, 608)
 
 

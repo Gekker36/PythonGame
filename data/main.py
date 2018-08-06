@@ -11,7 +11,7 @@ import random
 class Player(object):
     def __init__(self):
         pg.sprite.Sprite.__init__(self)
-        self.image = setup.GFX['Player']
+        self.image = setup.GFX['Character']
         self.image.convert_alpha()
         self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect()
@@ -56,28 +56,23 @@ class GUI(object):
         self.font = pg.font.SysFont('arial',18)
 
     def update_GUI(self,DISPLAYSURF, player):
-        placePosition = 2
-        # 
+        placePosition = 10
+        
+        
+        #Draw resources
         for item in player.inventory:
             image = setup.TMX[item]
             rect = image.get_rect()
             surface = pg.Surface(rect.size)
-            surface.set_colorkey(c.black)
+            placePosition +=10
+            textObj = self.font.render(str(player.inventory[item]), True, c.white, c.black)
             surface.blit(image, rect)
-            # textObj = self.font.render(str(player.inventory[item]), True, c.white, c.black)
-            # surface.blit(textObj, (placePosition+10,5))
-            DISPLAYSURF.blit(surface,(0,0))
-            placePosition +=2
-        # 
-        # placePosition = 10
-        # for item in player.inventory:
-        #     DISPLAYSURF.blit(setup.TMX[item], (placePosition, 5))
-        #     placePosition += 50
-        #     textObj = INVFONT.render(str(player.inventory[item]), True, c.white, c.black)
-        #     DISPLAYSURF.blit(textObj, (placePosition,16))
-        #     placePosition +=60
+            surface.blit(textObj, rect)
+            DISPLAYSURF.blit(surface,(placePosition,5))
+            placePosition +=60
             
-    
+        
+
     def make_dialogue_box(self):
         image = setup.TMX['Stone']
         rect = image.get_rect()

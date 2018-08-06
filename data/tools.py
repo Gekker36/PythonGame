@@ -110,7 +110,7 @@ class _State(object):
         pass            
         
         
-def load_all_gfx(directory, colorkey=(255,0,255), accept=('.png', 'jpg', 'bmp')):
+def load_all_gfx(directory, colorkey=(255,0,255), accept=('.png', '.jpg', '.bmp')):
     graphics = {}
     for pic in os.listdir(directory):
         name, ext = os.path.splitext(pic)
