@@ -55,7 +55,28 @@ class GUI(object):
     def __init__(self):
         self.font = pg.font.SysFont('arial',18)
 
-        
+    def update_GUI(self,DISPLAYSURF, player):
+        placePosition = 2
+        # 
+        for item in player.inventory:
+            image = setup.TMX[item]
+            rect = image.get_rect()
+            surface = pg.Surface(rect.size)
+            surface.set_colorkey(c.black)
+            surface.blit(image, rect)
+            # textObj = self.font.render(str(player.inventory[item]), True, c.white, c.black)
+            # surface.blit(textObj, (placePosition+10,5))
+            DISPLAYSURF.blit(surface,(0,0))
+            placePosition +=2
+        # 
+        # placePosition = 10
+        # for item in player.inventory:
+        #     DISPLAYSURF.blit(setup.TMX[item], (placePosition, 5))
+        #     placePosition += 50
+        #     textObj = INVFONT.render(str(player.inventory[item]), True, c.white, c.black)
+        #     DISPLAYSURF.blit(textObj, (placePosition,16))
+        #     placePosition +=60
+            
     
     def make_dialogue_box(self):
         image = setup.TMX['Stone']
@@ -74,7 +95,7 @@ class GUI(object):
         sprite.rect = rect
         return sprite
         
-        
+
     
 
 def main():
@@ -92,6 +113,10 @@ def main():
     
     print("Create GUI")
     gui = GUI()
+    # guiSurface = pg.Surface((0, 0))
+    # DISPLAYSURF.blit(guiSurface, (0, 0))
+    
+    INVFONT=pg.font.SysFont('arial',18)
     
     print("Start gameplay loop")
     run=True
@@ -113,15 +138,18 @@ def main():
     
         
         DISPLAYSURF.blit(player.image, (player.rect.x*c.tileSize,player.rect.y*c.tileSize+50))
-        gui.make_dialogue_box()
-        DISPLAYSURF.blit(player.image, (player.rect.x*c.tileSize,player.rect.y*c.tileSize+50))
+        gui.update_GUI(DISPLAYSURF,player)
+
+         
+        # gui.make_dialogue_box()
+        # DISPLAYSURF.blit(player.image, (player.rect.x*c.tileSize,player.rect.y*c.tileSize+50))
         
-        # Draw GUI
+        # # Draw GUI
         # placePosition = 10
         # for item in player.inventory:
         #     DISPLAYSURF.blit(setup.TMX[item], (placePosition, 5))
         #     placePosition += 50
-        #     textObj = gui.render(str(player.inventory[item]), True, c.white, c.black)
+        #     textObj = INVFONT.render(str(player.inventory[item]), True, c.white, c.black)
         #     DISPLAYSURF.blit(textObj, (placePosition,16))
         #     placePosition +=60
             
