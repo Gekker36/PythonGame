@@ -13,12 +13,33 @@ class Player(object):
         pg.sprite.Sprite.__init__(self)
         self.image = setup.GFX['Character']
         self.image.convert_alpha()
-        self.image.set_colorkey((255,255,255))
+        self.image.set_colorkey((0,255,0))
         self.rect = self.image.get_rect()
         self.rect.x = 0
         self.rect.y = 0
+        self.x = 0
+        self.y = 0
+        
         self.direction = 2
         self.inventory = {'Grass': 0, 'Water': 0, 'Stone': 0}
+        self.healthCurrent = 100
+        self.healthMax = 100
+        self.healthRegen = 1
+        self.manaCurrent = 50
+        self.manaMax = 100
+        self.manaRegen = 1
+        self.moveSpeed = 1
+    
+    def updatePlayer(self, DISPLAYSURF, deltatime):
+        
+        if self.healthCurrent < self.healthMax:
+            self.healthCurrent += (self.healthRegen*deltatime)
+        if self.manaCurrent < self.manaMax:
+            self.manaCurrent += (self.manaRegen*deltatime)  
+            
+        DISPLAYSURF.blit(self.image, (self.x*c.tileSize,self.y*c.tileSize+100))
+
+        
 
 class Tile(object):
     def __init__(self,x,y,tileType):
@@ -55,23 +76,32 @@ class GUI(object):
     def __init__(self):
         self.font = pg.font.SysFont('arial',18)
 
-    def update_GUI(self,DISPLAYSURF, player):
+    def update_GUI(self,DISPLAYSURF, player, fpsClock):
         placePosition = 10
         
+        GUIsurface = pg.Surface((c.mapWidth*c.tileSize, 100))
+        
+        #Draw Health
+        textObj = self.font.render(str('HEALTH: ') +str(int(player.healthCurrent)) + str(' / ') + str(int(player.healthMax)), True, c.white, c.black)
+        GUIsurface.blit(textObj, (placePosition, 5))
+        #Draw Mana
+        textObj = self.font.render(str('MANA: ') +str(int(player.manaCurrent)) + str(' / ') + str(int(player.manaMax)), True, c.white, c.black)
+        GUIsurface.blit(textObj, (placePosition, 40))
+        placePosition += 150
         
         #Draw resources
         for item in player.inventory:
             image = setup.TMX[item]
-            rect = image.get_rect()
-            surface = pg.Surface(rect.size)
-            placePosition +=10
-            textObj = self.font.render(str(player.inventory[item]), True, c.white, c.black)
-            surface.blit(image, rect)
-            surface.blit(textObj, rect)
-            DISPLAYSURF.blit(surface,(placePosition,5))
-            placePosition +=60
-            
         
+            textObj = self.font.render(str(player.inventory[item]), True, c.white, c.black)
+            GUIsurface.blit(image, (placePosition,5))
+            GUIsurface.blit(textObj, (placePosition,5))
+            placePosition +=70
+            
+            
+        textObj = self.font.render(str(fpsClock), True, c.white, c.black)
+        GUIsurface.blit(textObj, (placePosition, 5))
+        DISPLAYSURF.blit(GUIsurface,(0,0))
 
     def make_dialogue_box(self):
         image = setup.TMX['Stone']
@@ -97,8 +127,8 @@ def main():
     
     print("Starting Main")
     
-    DISPLAYSURF = pg.display.set_mode((c.mapWidth*c.tileSize, c.mapHeight*c.tileSize+50))
-    pgClock = pg.time.Clock()
+    DISPLAYSURF = pg.display.set_mode((c.mapWidth*c.tileSize, c.mapHeight*c.tileSize+100))
+    gameClock = pg.time.Clock()
     
     print("Create world")
     world = World()
@@ -108,8 +138,7 @@ def main():
     
     print("Create GUI")
     gui = GUI()
-    # guiSurface = pg.Surface((0, 0))
-    # DISPLAYSURF.blit(guiSurface, (0, 0))
+
     
     INVFONT=pg.font.SysFont('arial',18)
     
@@ -121,35 +150,20 @@ def main():
     '''
     
     while run:
+        deltatime = gameClock.tick()/1000
+        fpsClock = int(gameClock.get_fps())
     
-        inputcontroller.playerInput(player, world)
-    #     # fpsTimer=pgClock.tick(60)
+        inputcontroller.playerInput(player, world, deltatime)
                 
         for row in range(c.mapHeight):
             for column in range(c.mapWidth):
-                DISPLAYSURF.blit(world.tilemap[row][column].image,(column*c.tileSize,(row*c.tileSize)+50))
+                DISPLAYSURF.blit(world.tilemap[row][column].image,(column*c.tileSize,row*c.tileSize+100))
                 
-    
-    
         
-        DISPLAYSURF.blit(player.image, (player.rect.x*c.tileSize,player.rect.y*c.tileSize+50))
-        gui.update_GUI(DISPLAYSURF,player)
+        player.updatePlayer(DISPLAYSURF,deltatime)
+        gui.update_GUI(DISPLAYSURF,player,fpsClock)
 
          
-        # gui.make_dialogue_box()
-        # DISPLAYSURF.blit(player.image, (player.rect.x*c.tileSize,player.rect.y*c.tileSize+50))
-        
-        # # Draw GUI
-        # placePosition = 10
-        # for item in player.inventory:
-        #     DISPLAYSURF.blit(setup.TMX[item], (placePosition, 5))
-        #     placePosition += 50
-        #     textObj = INVFONT.render(str(player.inventory[item]), True, c.white, c.black)
-        #     DISPLAYSURF.blit(textObj, (placePosition,16))
-        #     placePosition +=60
-            
-        # fpsClock = gui.render(str(int(pgClock.get_fps())), True, c.white, c.black)   
-        # DISPLAYSURF.blit(fpsClock, (placePosition,16))
         pg.display.update()
     
     

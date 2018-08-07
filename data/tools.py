@@ -1,5 +1,6 @@
 import os, random
 import pygame as pg
+from . import constants as c
       
         
 class Control(object):
@@ -116,6 +117,7 @@ def load_all_gfx(directory, colorkey=(255,0,255), accept=('.png', '.jpg', '.bmp'
         name, ext = os.path.splitext(pic)
         if ext.lower() in accept:
             img = pg.image.load(os.path.join(directory, pic))
+            img = pg.transform.scale(img, (c.tileSize, c.tileSize))
             if img.get_alpha():
                 img = img.convert_alpha()
             else:
