@@ -19,6 +19,10 @@ class Player(object):
         self.rect.y = 0
         self.x = 0
         self.y = 0
+        self.moveLeft = False
+        self.moveRight = False
+        self.moveUp = False
+        self.moveDown = False
         
         self.direction = 2
         self.inventory = {'Grass': 0, 'Water': 0, 'Stone': 0}
@@ -28,7 +32,12 @@ class Player(object):
         self.manaCurrent = 50
         self.manaMax = 100
         self.manaRegen = 1
-        self.moveSpeed = 1
+        self.moveSpeed = 2
+        
+    def castFireball(self):
+        print("Casting Fireball")
+        Spell(self)
+        
     
     def updatePlayer(self, DISPLAYSURF, deltatime):
         
@@ -37,8 +46,45 @@ class Player(object):
         if self.manaCurrent < self.manaMax:
             self.manaCurrent += (self.manaRegen*deltatime)  
             
+        if self.moveLeft == True:
+            if self.x >= 0:
+                self.x -=self.moveSpeed*deltatime
+            
+        if self.moveRight == True:
+            if self.x <= c.mapWidth-1:
+                self.x += self.moveSpeed*deltatime
+               
+        if self.moveUp == True:
+            if self.y>= 0:
+                self.y -= self.moveSpeed*deltatime
+                   
+        if self.moveDown == True:
+            if self.y <= c.mapHeight-1:
+                self.y +=self.moveSpeed*deltatime 
+            
         DISPLAYSURF.blit(self.image, (self.x*c.tileSize,self.y*c.tileSize+100))
+        
+class Spell(object):
+    def __init__(self, player):
+        pg.sprite.Sprite.__init__(self)
+        self.image = setup.GFX['Orb of Flame']
+        self.rect = self.image.get_rect()
+        self.castSpell(player)
+        
+    def castSpell(self, player):
+        self.manaCost = 10
+        self.direction = player.direction
+        self.speed = 4
+        self.x = player.x
+        self.y = player.y
 
+        
+    def updateSpell(self, deltatime):
+        self.x +=self.speed*deltatime
+        surface = pg.Surface(self.rect.size)
+        surface.set_colorkey(c.black)
+        surface.blit(self.image, self.rect)
+        
         
 
 class Tile(object):
