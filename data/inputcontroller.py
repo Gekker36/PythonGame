@@ -2,58 +2,61 @@ import pygame as pg
 from . import constants as c
 from . import main as m
 
-def playerInput(player,world, deltatime):
+def playerInput(gameControl):
     for event in pg.event.get():
         # print(event)
         if event.type == pg.QUIT:
-            m.run=False
-            pg.quit()
+            gameControl.quit=True
+            
         elif event.type == pg.KEYDOWN:
             if(event.key == pg.K_RIGHT):
-                player.moveRight = True
-                player.direction = 1
+                gameControl.player.moveRight = True
+                gameControl.player.direction = 1
                     
             if(event.key == pg.K_LEFT):
-                player.moveLeft = True
-                player.direction = 3
+                gameControl.player.moveLeft = True
+                gameControl.player.direction = 3
                     
             if(event.key == pg.K_DOWN):
-                player.moveDown = True
-                player.direction = 2
+                gameControl.player.moveDown = True
+                gameControl.player.direction = 2
                     
             if(event.key == pg.K_UP):
-                player.moveUp = True
-                player.direction = 0
+                gameControl.player.moveUp = True
+                gameControl.player.direction = 0
+                
+            if(event.key == pg.K_SPACE):
+                currentTile = gameControl.world.tilemap[int(round(gameControl.player.y))][int(round(gameControl.player.x))]
+                if currentTile.tileType!='Grass':
+                    gameControl.player.inventory[currentTile.tileType]+=1
+                    gameControl.world.tilemap[int(round(gameControl.player.y))][int(round(gameControl.player.x))].tileType= 'Grass'
+                    currentTile.updateTile()
             
             if(event.key == pg.K_1):
-                player.castFireball()
+                gameControl.player.castFireball()
+                
                     
         elif event.type == pg.KEYUP:
             if(event.key == pg.K_RIGHT):
-                if player.x!= c.mapWidth-1:
-                    player.moveRight = False
-                    player.direction = 1
+                if gameControl.player.x!= c.mapWidth-1:
+                    gameControl.player.moveRight = False
+                    gameControl.player.direction = 1
                     
             if(event.key == pg.K_LEFT):
-                if player.x!= 0:
-                    player.moveLeft = False
-                    player.direction = 3
+                if gameControl.player.x!= 0:
+                    gameControl.player.moveLeft = False
+                    gameControl.player.direction = 3
                     
             if(event.key == pg.K_DOWN):
-                if player.y!= c.mapHeight-1:
-                    player.moveDown = False
-                    player.direction = 2
+                if gameControl.player.y!= c.mapHeight-1:
+                    gameControl.player.moveDown = False
+                    gameControl.player.direction = 2
                     
             if(event.key == pg.K_UP):
-                if player.y!=0:
-                    player.moveUp = False
-                    player.direction = 0
+                if gameControl.player.y!=0:
+                    gameControl.player.moveUp = False
+                    gameControl.player.direction = 0
 
              
-            if(event.key == pg.K_SPACE):
-                currentTile = world.tilemap[int(round(player.y))][int(round(player.x))]
-                if currentTile.tileType!='Grass':
-                    player.inventory[currentTile.tileType]+=1
-                    world.tilemap[int(round(player.y))][int(round(player.x))].tileType= 'Grass'
-                    currentTile.updateTile()
+        
             # print(player.rect)

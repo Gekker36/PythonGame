@@ -69,6 +69,7 @@ class Spell(object):
         pg.sprite.Sprite.__init__(self)
         self.image = setup.GFX['Orb of Flame']
         self.rect = self.image.get_rect()
+        self.screen = pg.display.get_surface()
         self.castSpell(player)
         
     def castSpell(self, player):
@@ -77,6 +78,9 @@ class Spell(object):
         self.speed = 4
         self.x = player.x
         self.y = player.y
+        surface = pg.Surface(self.rect.size)
+        surface.set_colorkey(c.black)
+        surface.blit(self.image, self.rect)
 
         
     def updateSpell(self, deltatime):
@@ -96,8 +100,11 @@ class Tile(object):
         self.rect.x = x
         self.rect.y = y
         
-    def updateTile(self):
+    def update(self):
         self.image = setup.TMX[self.tileType]
+        
+    def draw(self,surface):
+        surface.blit(self.image, self.rect)
         
         
 class World(object):
@@ -106,6 +113,7 @@ class World(object):
         self.mapWidth = c.mapWidth
         self.worldGenerator()
         self.tilemap
+        self.gameObjects = pg.sprite.Group()
     
     def worldGenerator(self):
         print("Create tilemap")
@@ -167,52 +175,58 @@ class GUI(object):
         return sprite
         
 
-    
+class GameControl(object):
+    def __init__(self):
+        self.screen = pg.display.set_mode((c.mapWidth*c.tileSize, c.mapHeight*c.tileSize+100))
+        self.clock = pg.time.Clock()
+        self.quit = False
+        
+        
+    def update_events(self):
+        inputcontroller.playerInput(self)
+        
+        
+        
+    def update_screen(self):
+        for row in range(c.mapHeight):
+            for column in range(c.mapWidth):
+                self.screen.blit(self.world.tilemap[row][column].image,(column*c.tileSize,row*c.tileSize+100))
+                
+        
+        self.player.updatePlayer(self.screen,self.deltatime)
+        self.gui.update_GUI(self.screen,self.player,self.fpsClock)
+        
+        
+    def main(self):
+        print("GameControl init")
+        
+        print("Create world")
+        self.world = World()
+        
+        print("Create player")
+        self.player = Player()
+        
+        print("Create GUI")
+        self.gui = GUI()
+        
+        while not self.quit:
+            self.deltatime = self.clock.tick()/1000
+            self.fpsClock = self.clock.get_fps()
+            self.update_events()
+            self.update_screen()
+            pg.display.update()
+        
+        
+        
 
 def main():
     
-    print("Starting Main")
+    print("Create GameControl")
+    gameControl = GameControl().main()
     
-    DISPLAYSURF = pg.display.set_mode((c.mapWidth*c.tileSize, c.mapHeight*c.tileSize+100))
-    gameClock = pg.time.Clock()
-    
-    print("Create world")
-    world = World()
-    
-    print("Create player")
-    player = Player()
-    
-    print("Create GUI")
-    gui = GUI()
 
     
-    INVFONT=pg.font.SysFont('arial',18)
-    
-    print("Start gameplay loop")
-    run=True
-    
-    '''
-    Main gameloop
-    '''
-    
-    while run:
-        deltatime = gameClock.tick()/1000
-        fpsClock = int(gameClock.get_fps())
-    
-        inputcontroller.playerInput(player, world, deltatime)
-                
-        for row in range(c.mapHeight):
-            for column in range(c.mapWidth):
-                DISPLAYSURF.blit(world.tilemap[row][column].image,(column*c.tileSize,row*c.tileSize+100))
-                
-        
-        player.updatePlayer(DISPLAYSURF,deltatime)
-        gui.update_GUI(DISPLAYSURF,player,fpsClock)
-
-         
-        pg.display.update()
-    
-    
+   
     
     
     
