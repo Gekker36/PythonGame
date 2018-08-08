@@ -30,7 +30,6 @@ def playerInput(gameControl):
                 if currentTile.tileType!='Grass':
                     gameControl.player.inventory[currentTile.tileType]+=1
                     gameControl.world.tilemap[int(round(gameControl.player.y))][int(round(gameControl.player.x))].tileType= 'Grass'
-                    currentTile.updateTile()
             
             if(event.key == pg.K_1):
                 gameControl.player.castFireball()
@@ -40,22 +39,22 @@ def playerInput(gameControl):
             if(event.key == pg.K_RIGHT):
                 if gameControl.player.x!= c.mapWidth-1:
                     gameControl.player.moveRight = False
-                    gameControl.player.direction = 1
+                    
                     
             if(event.key == pg.K_LEFT):
                 if gameControl.player.x!= 0:
                     gameControl.player.moveLeft = False
-                    gameControl.player.direction = 3
+                    
                     
             if(event.key == pg.K_DOWN):
                 if gameControl.player.y!= c.mapHeight-1:
                     gameControl.player.moveDown = False
-                    gameControl.player.direction = 2
+                  
                     
             if(event.key == pg.K_UP):
                 if gameControl.player.y!=0:
                     gameControl.player.moveUp = False
-                    gameControl.player.direction = 0
+                    
 
              
         
