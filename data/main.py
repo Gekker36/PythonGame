@@ -10,17 +10,15 @@ character_sprites = pg.sprite.Group()
 spell_sprites = pg.sprite.Group()
 
 
-class Player(object):
+class Player(pg.sprite.Sprite):
     def __init__(self):
-        pg.sprite.Sprite.__init__(self)
+        pg.sprite.Sprite.__init__(self,character_sprites)
         self.image = setup.GFX['Character']
         self.image.convert_alpha()
         self.image.set_colorkey((0,255,0))
         self.rect = self.image.get_rect()
         self.rect.x = 0
-        self.rect.y = 0
-        self.x = 5
-        self.y = 5
+        self.rect.y = 100
         self.moveLeft = False
         self.moveRight = False
         self.moveUp = False
@@ -41,30 +39,32 @@ class Player(object):
         Spell(self)
         
     
-    def updatePlayer(self, DISPLAYSURF, deltatime):
+    def update(self, deltatime):
         
         if self.healthCurrent < self.healthMax:
-            self.healthCurrent += (self.healthRegen*deltatime)
+            self.healthCurrent += self.healthRegen*deltatime
         if self.manaCurrent < self.manaMax:
-            self.manaCurrent += (self.manaRegen*deltatime)  
+            self.manaCurrent += self.manaRegen*deltatime
             
         if self.moveLeft == True:
-            if self.x >= 0:
-                self.x -=self.moveSpeed*deltatime
+            if self.rect.x > 0:
+                self.rect.x -=self.moveSpeed
             
         if self.moveRight == True:
-            if self.x <= c.mapWidth-1:
-                self.x += self.moveSpeed*deltatime
+            if self.rect.x < (c.mapWidth-1)*64:
+                self.rect.x += self.moveSpeed
                
         if self.moveUp == True:
-            if self.y>= 0:
-                self.y -= self.moveSpeed*deltatime
+            if self.rect.y > 100:
+                self.rect.y -= self.moveSpeed
                    
         if self.moveDown == True:
-            if self.y <= c.mapHeight-1:
-                self.y +=self.moveSpeed*deltatime 
-            
-        DISPLAYSURF.blit(self.image, (self.x*c.tileSize,self.y*c.tileSize+100))
+            if self.rect.y < ((c.mapHeight-1)*64)+100:
+                self.rect.y +=self.moveSpeed 
+
+        
+    def draw(self, screen):
+        surface.blit(self.image, self.rect)
         
 class Spell(pg.sprite.Sprite):
     def __init__(self, player):
@@ -98,9 +98,6 @@ class Spell(pg.sprite.Sprite):
         if self.rect.x >= c.mapWidth*c.tileSize or self.rect.x <= -c.tileSize or self.rect.y >= c.mapHeight*c.tileSize or self.rect.y <= -c.tileSize:
             self.kill()
        
-
-
-    
     def draw(self, screen):
         surface.blit(self.image, self.rect)
         
@@ -210,19 +207,14 @@ class GameControl(object):
         inputcontroller.playerInput(self)
         tile_sprites.update()
         spell_sprites.update(self.deltatime)
+        character_sprites.update(self.deltatime)
         
         
     def update_screen(self):
-        # for row in range(c.mapHeight):
-        #     for column in range(c.mapWidth):
-        #         self.screen.blit(self.world.tilemap[row][column].image,(column*c.tileSize,row*c.tileSize+100))
-                
         tile_sprites.draw(self.screen)
-        
-        self.player.updatePlayer(self.screen,self.deltatime)
         spell_sprites.draw(self.screen)
         self.gui.update_GUI(self.screen,self.player,self.fpsClock)
-        
+        character_sprites.draw(self.screen)
         
     def main(self):
         print("GameControl init")
