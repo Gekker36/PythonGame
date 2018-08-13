@@ -24,6 +24,7 @@ class Player(pg.sprite.Sprite):
         self.moveUp = False
         self.moveDown = False
         
+        
         self.direction = 2
         self.inventory = {'Grass': 0, 'Water': 0, 'Stone': 0}
         self.healthCurrent = 100
@@ -73,8 +74,8 @@ class Spell(pg.sprite.Sprite):
             pg.sprite.Sprite.__init__(self,spell_sprites)
             self.image = setup.GFX['Orb of Flame']
             self.rect = self.image.get_rect()
-            self.rect.x = player.x*64
-            self.rect.y = (player.y*64)+100
+            self.rect.x = player.rect.x*64
+            self.rect.y = (player.rect.y*64)+100
             self.image.set_colorkey((0,0,0))
             self.direction = player.direction
             self.speed = 4
@@ -144,6 +145,9 @@ class World(object):
 class GUI(object):
     def __init__(self):
         self.font = pg.font.SysFont('arial',18)
+        self.inventory_shown = False
+        self.charactersheet_shown = False
+        self.mainmenu_shown = False
 
     def update_GUI(self,DISPLAYSURF, player, fpsClock):
         placePosition = 10
@@ -175,24 +179,15 @@ class GUI(object):
         GUIsurface.blit(textObj, (placePosition, 40))
         
         DISPLAYSURF.blit(GUIsurface,(0,0))
-
-    def make_dialogue_box(self):
-        image = setup.TMX['Stone']
-        rect = image.get_rect()
-        surface = pg.Surface(rect.size)
-        surface.set_colorkey(c.black)
-        surface.blit(image, rect)
-        surface.blit(image, rect)
-        dialogue = self.font.render("Schrijf hier text",
-                                    True,
-                                    c.black)
-        dialogue_rect = dialogue.get_rect(left=50, top=50)
-        surface.blit(dialogue, dialogue_rect)
-        sprite = pg.sprite.Sprite()
-        sprite.image = surface
-        sprite.rect = rect
-        return sprite
         
+        if self.inventory_shown:
+            square = pg.draw.rect(DISPLAYSURF,c.white,(400,100,250,300))
+
+        if self.charactersheet_shown:
+            square = pg.draw.rect(DISPLAYSURF,c.white,(0,100,250,300))
+        
+        if self.mainmenu_shown:
+            square = pg.draw.rect(DISPLAYSURF,c.white,(400,100,250,300))
 
 class GameControl(object):
     def __init__(self):
@@ -213,8 +208,9 @@ class GameControl(object):
     def update_screen(self):
         tile_sprites.draw(self.screen)
         spell_sprites.draw(self.screen)
-        self.gui.update_GUI(self.screen,self.player,self.fpsClock)
         character_sprites.draw(self.screen)
+        self.gui.update_GUI(self.screen,self.player,self.fpsClock)
+        
         
     def main(self):
         print("GameControl init")

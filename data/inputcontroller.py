@@ -33,7 +33,15 @@ def playerInput(gameControl):
             
             if(event.key == pg.K_1):
                 gameControl.player.castFireball()
+              
+            if(event.key == pg.K_2):
+                print(gameControl.Player.rect)
+               
+            if(event.key == pg.K_i):
+                gameControl.gui.inventory_shown= not gameControl.gui.inventory_shown
                 
+            if(event.key == pg.K_c):
+                gameControl.gui.charactersheet_shown= not gameControl.gui.charactersheet_shown
                     
         elif event.type == pg.KEYUP:
             if(event.key == pg.K_RIGHT):
