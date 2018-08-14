@@ -24,9 +24,9 @@ class Player(pg.sprite.Sprite):
         self.moveUp = False
         self.moveDown = False
         
-        
         self.direction = 2
         self.inventory = {'Grass': 0, 'Water': 0, 'Stone': 0}
+        self.itemInventory = Inventory()
         self.healthCurrent = 100
         self.healthMax = 100
         self.healthRegen = 1
@@ -35,9 +35,15 @@ class Player(pg.sprite.Sprite):
         self.manaRegen = 10
         self.moveSpeed = 2
         
+        self.attack = 10
+        self.defence = 10
+        
+        
     def castFireball(self):
         print("Casting Fireball")
         Spell(self)
+        
+        
         
     
     def update(self, deltatime):
@@ -67,6 +73,39 @@ class Player(pg.sprite.Sprite):
     def draw(self, screen):
         surface.blit(self.image, self.rect)
         
+class Item(object):
+    def __init__(self):
+        self.image = setup.GFX['Sword_icon']
+        self.name = "Sword"
+        self.type = "weapon"
+        self.isStackable = False
+        self.price = 100
+        self.amount = 1
+        
+        
+class Inventory(object):
+    def __init__(self):
+        self.items=[]
+        self.size = 10
+        
+    def add_item(self):
+        item = Item()
+        
+        
+            
+        # if item.name in [x[0].name for x in self.items]:
+        #     for x in self.items:
+        #         if item.name == x[0].name:
+        #             x[1] +=1
+        # else:
+        
+        if len(self.items)<self.size:
+            self.items.append(item)
+        else:
+            print("Inventory is full")
+        
+
+        
 class Spell(pg.sprite.Sprite):
     def __init__(self, player):
         self.manaCost = 10
@@ -74,8 +113,8 @@ class Spell(pg.sprite.Sprite):
             pg.sprite.Sprite.__init__(self,spell_sprites)
             self.image = setup.GFX['Orb of Flame']
             self.rect = self.image.get_rect()
-            self.rect.x = player.rect.x*64
-            self.rect.y = (player.rect.y*64)+100
+            self.rect.x = player.rect.x
+            self.rect.y = player.rect.y
             self.image.set_colorkey((0,0,0))
             self.direction = player.direction
             self.speed = 4
@@ -180,8 +219,20 @@ class GUI(object):
         
         DISPLAYSURF.blit(GUIsurface,(0,0))
         
+        placepositionx = 0
+        placepositiony = 0
         if self.inventory_shown:
-            square = pg.draw.rect(DISPLAYSURF,c.white,(400,100,250,300))
+            inventorySurface = pg.Surface((128,320))
+            inventorySurface.fill(c.white)
+            
+            for item in player.itemInventory.items:
+                inventorySurface.blit(item.image, (placepositionx,placepositiony))
+                placepositiony += 64
+                if placepositiony >= 320:
+                    placepositiony = 0
+                    placepositionx += 64
+            DISPLAYSURF.blit(inventorySurface,(400,100))
+
 
         if self.charactersheet_shown:
             square = pg.draw.rect(DISPLAYSURF,c.white,(0,100,250,300))

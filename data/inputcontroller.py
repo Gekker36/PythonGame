@@ -26,16 +26,16 @@ def playerInput(gameControl):
                 gameControl.player.direction = 0
                 
             if(event.key == pg.K_SPACE):
-                currentTile = gameControl.world.tilemap[int(round(gameControl.player.rect.y))][int(round(gameControl.player.rect.x))]
+                currentTile = gameControl.world.tilemap[int(round((gameControl.player.rect.y-100)/64))][int(round(gameControl.player.rect.x/64))]
                 if currentTile.tileType!='Grass':
                     gameControl.player.inventory[currentTile.tileType]+=1
-                    gameControl.world.tilemap[int(round(gameControl.player.rect.y))][int(round(gameControl.player.rect.x))].tileType= 'Grass'
+                    gameControl.world.tilemap[int(round((gameControl.player.rect.y-100)/64))][int(round(gameControl.player.rect.x/64))].tileType= 'Grass'
             
             if(event.key == pg.K_1):
                 gameControl.player.castFireball()
               
             if(event.key == pg.K_2):
-                print(gameControl.Player.rect)
+                gameControl.player.itemInventory.add_item()
                
             if(event.key == pg.K_i):
                 gameControl.gui.inventory_shown= not gameControl.gui.inventory_shown
