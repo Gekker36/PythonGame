@@ -7,6 +7,15 @@ def playerInput(gameControl):
         # print(event)
         if event.type == pg.QUIT:
             gameControl.quit=True
+        
+        elif event.type == pg.MOUSEBUTTONDOWN:
+            mousePos = pg.mouse.get_pos()
+            mouseColliders = [s for s in m.icon_sprites if s.rect.collidepoint(mousePos)]
+            if len(mouseColliders) >= 1:
+                if len(gameControl.player.colliders)>=1:
+                    print (mouseColliders)
+                    gameControl.player.colliders[0].inventory.add_item(mouseColliders[0].item)
+                    # gameControl.player.itemInventory.remove_item(mouseColliders[0].item)
             
         elif event.type == pg.KEYDOWN:
             if(event.key == pg.K_RIGHT):
@@ -35,10 +44,16 @@ def playerInput(gameControl):
                 gameControl.player.castFireball()
               
             if(event.key == pg.K_2):
-                gameControl.player.itemInventory.add_item()
+                gameControl.player.createItem()
+                
+            if(event.key == pg.K_3):
+                gameControl.player.createChest()
+                
+            if(event.key == pg.K_4):
+                print(gameControl.player.itemInventory.items) 
                
             if(event.key == pg.K_i):
-                gameControl.gui.inventory_shown= not gameControl.gui.inventory_shown
+                gameControl.gui.playerInventory_shown= not gameControl.gui.playerInventory_shown
                 
             if(event.key == pg.K_c):
                 gameControl.gui.charactersheet_shown= not gameControl.gui.charactersheet_shown

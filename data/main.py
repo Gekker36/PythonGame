@@ -7,7 +7,9 @@ import random
 
 tile_sprites = pg.sprite.Group()
 character_sprites = pg.sprite.Group()
+object_sprites = pg.sprite.Group()
 spell_sprites = pg.sprite.Group()
+icon_sprites = pg.sprite.Group()
 
 
 class Player(pg.sprite.Sprite):
@@ -23,6 +25,7 @@ class Player(pg.sprite.Sprite):
         self.moveRight = False
         self.moveUp = False
         self.moveDown = False
+        self.colliders=[]
         
         self.direction = 2
         self.inventory = {'Grass': 0, 'Water': 0, 'Stone': 0}
@@ -42,11 +45,21 @@ class Player(pg.sprite.Sprite):
     def castFireball(self):
         print("Casting Fireball")
         Spell(self)
-        
-        
-        
+    
+    def createChest(self):
+        print("Creating Chest")
+        Chest(self)
+      
+    def createItem(self):
+        self.itemInventory.add_item(Item())
     
     def update(self, deltatime):
+        
+        self.colliders = pg.sprite.spritecollide(self, object_sprites, False)
+        # if colliders:
+            # print (colliders)
+        
+        self.currentTile=[int(round(self.rect.y-100)/64), int(round(self.rect.x/64))]
         
         if self.healthCurrent < self.healthMax:
             self.healthCurrent += self.healthRegen*deltatime
@@ -85,26 +98,37 @@ class Item(object):
         
 class Inventory(object):
     def __init__(self):
-        self.items=[]
         self.size = 10
+        self.items=[]
+
         
-    def add_item(self):
-        item = Item()
-        
-        
-            
-        # if item.name in [x[0].name for x in self.items]:
-        #     for x in self.items:
-        #         if item.name == x[0].name:
-        #             x[1] +=1
-        # else:
-        
+    def add_item(self, item):
         if len(self.items)<self.size:
             self.items.append(item)
         else:
             print("Inventory is full")
+            
+    def remove_item(self, item):
+        self.items.remove(item)
         
-
+        
+class Chest(pg.sprite.Sprite):
+    def __init__(self, player):
+        pg.sprite.Sprite.__init__(self,object_sprites)
+        self.inventory = Inventory()
+        self.image = setup.GFX["Chest Closed"]
+        self.rect = self.image.get_rect()
+        self.rect.x = player.currentTile[1]*64
+        self.rect.y = player.currentTile[0]*64+100
+        self.isOpen = False
+        
+        
+    def update(self):
+        pass
+        
+    def draw (self, screen):
+        surface.blit(self.image, self.rect)
+        
         
 class Spell(pg.sprite.Sprite):
     def __init__(self, player):
@@ -135,6 +159,11 @@ class Spell(pg.sprite.Sprite):
             self.rect.x -= self.speed
             # self.rect.y += self.speed
             
+        hit = pg.sprite.spritecollide(self, object_sprites,False)
+        
+        if hit:
+            self.kill()
+            
         if self.rect.x >= c.mapWidth*c.tileSize or self.rect.x <= -c.tileSize or self.rect.y >= c.mapHeight*c.tileSize or self.rect.y <= -c.tileSize:
             self.kill()
        
@@ -151,6 +180,7 @@ class Tile(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x*64
         self.rect.y = (y*64)+100
+        self.isPassable = True
 
         
     def update(self):
@@ -180,17 +210,32 @@ class World(object):
                     self.tilemap[h][w]= Tile(w,h,'Water')
                 if random.randint(1,100)<15 :
                     self.tilemap[h][w]= Tile(w,h,'Stone')
+                    
+                    
+class Icon(pg.sprite.Sprite):
+    def __init__(self, base, inventory):
+        pg.sprite.Sprite.__init__(self, icon_sprites)
+        
+        self.item = base
+        self.image = self.item.image
+        self.rect = self.image.get_rect()
+        self.inventory = inventory
+        
+    
 
 class GUI(object):
     def __init__(self):
         self.font = pg.font.SysFont('arial',18)
-        self.inventory_shown = False
+        self.playerInventory_shown = False
         self.charactersheet_shown = False
         self.mainmenu_shown = False
+        self.chestInventory_shown = False
 
     def update_GUI(self,DISPLAYSURF, player, fpsClock):
-        placePosition = 10
         
+        
+        #Draw Top GUI
+        placePosition = 10
         GUIsurface = pg.Surface((c.mapWidth*c.tileSize, 100))
         
         #Draw Health
@@ -215,28 +260,69 @@ class GUI(object):
         GUIsurface.blit(textObj, (placePosition, 5))
         
         textObj = self.font.render(str(len(spell_sprites)), True, c.white, c.black)
-        GUIsurface.blit(textObj, (placePosition, 40))
+        GUIsurface.blit(textObj, (placePosition, 30))
+        
+        textObj = self.font.render(str(len(icon_sprites)), True, c.white, c.black)
+        GUIsurface.blit(textObj, (placePosition, 50))
         
         DISPLAYSURF.blit(GUIsurface,(0,0))
         
-        placepositionx = 0
-        placepositiony = 0
-        if self.inventory_shown:
-            inventorySurface = pg.Surface((128,320))
-            inventorySurface.fill(c.white)
+        icon_sprites.empty()
+        #Draw inventory screen
+        if self.playerInventory_shown:
+            #draw own inventory
+            placepositionx = 0
+            placepositiony = 0
             
-            for item in player.itemInventory.items:
-                inventorySurface.blit(item.image, (placepositionx,placepositiony))
+            playerInventorySurface = pg.Surface((128,320))
+            playerInventorySurface.fill(c.white)
+            
+            
+            for i in range(player.itemInventory.size):
+                playerInventorySurface.blit(setup.GFX["Empty Inventory"], (placepositionx,placepositiony))
                 placepositiony += 64
                 if placepositiony >= 320:
                     placepositiony = 0
                     placepositionx += 64
-            DISPLAYSURF.blit(inventorySurface,(400,100))
+                    
+            placepositionx = 0
+            placepositiony = 0
+            for item in player.itemInventory.items:
+                icon=Icon(item, player.itemInventory)
+                playerInventorySurface.blit(icon.image, (placepositionx,placepositiony))
+                icon.rect.x = placepositionx+400
+                icon.rect.y = placepositiony+100
+                placepositiony += 64
+                if placepositiony >= 320:
+                    placepositiony = 0
+                    placepositionx += 64
+            DISPLAYSURF.blit(playerInventorySurface,(400,100))
+            
+            if len(player.colliders)>=1:
+                placepositionx = 0
+                placepositiony = 0
+                self.chestInventory_shown=True
+                
+                chestInventorySurface = pg.Surface((128,320))
+                chestInventorySurface.fill(c.white)
 
+                for item in player.colliders[0].inventory.items:
+                    icon=Icon(item, player.colliders[0].inventory)
+                    chestInventorySurface.blit(icon.image, (placepositionx,placepositiony))
+                    icon.rect.x = placepositionx+200
+                    icon.rect.y = placepositiony+100
+                    placepositiony += 64
+                    if placepositiony >= 320:
+                        placepositiony = 0
+                        placepositionx += 64
+                DISPLAYSURF.blit(chestInventorySurface,(200,100))
+                
 
+        #Draw CharacterSheet screen
         if self.charactersheet_shown:
             square = pg.draw.rect(DISPLAYSURF,c.white,(0,100,250,300))
         
+        #Draw MainMenu
         if self.mainmenu_shown:
             square = pg.draw.rect(DISPLAYSURF,c.white,(400,100,250,300))
 
@@ -259,6 +345,7 @@ class GameControl(object):
     def update_screen(self):
         tile_sprites.draw(self.screen)
         spell_sprites.draw(self.screen)
+        object_sprites.draw(self.screen)
         character_sprites.draw(self.screen)
         self.gui.update_GUI(self.screen,self.player,self.fpsClock)
         
