@@ -11,11 +11,29 @@ def playerInput(gameControl):
         elif event.type == pg.MOUSEBUTTONDOWN:
             mousePos = pg.mouse.get_pos()
             mouseColliders = [s for s in m.icon_sprites if s.rect.collidepoint(mousePos)]
-            if len(mouseColliders) >= 1:
-                if len(gameControl.player.colliders)>=1:
-                    print (mouseColliders)
-                    gameControl.player.colliders[0].inventory.add_item(mouseColliders[0].item)
-                    # gameControl.player.itemInventory.remove_item(mouseColliders[0].item)
+            if mouseColliders:
+                if gameControl.player.colliders:
+                    if mouseColliders[0].inventory == gameControl.player.inventory:
+                        gameControl.player.colliders[0].inventory.add_item(mouseColliders[0].item)
+                        gameControl.player.inventory.remove_item(mouseColliders[0].item)
+                    
+                    elif mouseColliders[0].inventory == gameControl.player.colliders[0].inventory:
+                        gameControl.player.colliders[0].inventory.remove_item(mouseColliders[0].item)
+                        gameControl.player.inventory.add_item(mouseColliders[0].item)
+                        
+                    
+                elif mouseColliders[0].inventory == gameControl.player.equipped:
+                    gameControl.player.equipped[mouseColliders[0].item.type] = []
+                    gameControl.player.inventory.add_item(mouseColliders[0].item) 
+                      
+                else:
+                    gameControl.player.equipped[mouseColliders[0].item.type] = mouseColliders[0].item
+                    gameControl.player.inventory.remove_item(mouseColliders[0].item)
+                
+                
+                        
+                        
+                        
             
         elif event.type == pg.KEYDOWN:
             if(event.key == pg.K_RIGHT):
@@ -34,11 +52,11 @@ def playerInput(gameControl):
                 gameControl.player.moveUp = True
                 gameControl.player.direction = 0
                 
-            if(event.key == pg.K_SPACE):
-                currentTile = gameControl.world.tilemap[int(round((gameControl.player.rect.y-100)/64))][int(round(gameControl.player.rect.x/64))]
-                if currentTile.tileType!='Grass':
-                    gameControl.player.inventory[currentTile.tileType]+=1
-                    gameControl.world.tilemap[int(round((gameControl.player.rect.y-100)/64))][int(round(gameControl.player.rect.x/64))].tileType= 'Grass'
+            # if(event.key == pg.K_SPACE):
+            #     currentTile = gameControl.world.tilemap[int(round((gameControl.player.rect.y-100)/64))][int(round(gameControl.player.rect.x/64))]
+            #     if currentTile.tileType!='Grass':
+            #         gameControl.player.inventory[currentTile.tileType]+=1
+            #         gameControl.world.tilemap[int(round((gameControl.player.rect.y-100)/64))][int(round(gameControl.player.rect.x/64))].tileType= 'Grass'
             
             if(event.key == pg.K_1):
                 gameControl.player.castFireball()
@@ -51,6 +69,9 @@ def playerInput(gameControl):
                 
             if(event.key == pg.K_4):
                 print(gameControl.player.itemInventory.items) 
+                
+            if(event.key == pg.K_5):
+                m.Enemy()
                
             if(event.key == pg.K_i):
                 gameControl.gui.playerInventory_shown= not gameControl.gui.playerInventory_shown

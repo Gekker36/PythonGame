@@ -28,8 +28,7 @@ class Player(pg.sprite.Sprite):
         self.colliders=[]
         
         self.direction = 2
-        self.inventory = {'Grass': 0, 'Water': 0, 'Stone': 0}
-        self.itemInventory = Inventory()
+        self.inventory = Inventory()
         self.healthCurrent = 100
         self.healthMax = 100
         self.healthRegen = 1
@@ -37,7 +36,11 @@ class Player(pg.sprite.Sprite):
         self.manaMax = 100
         self.manaRegen = 10
         self.moveSpeed = 2
+        self.level = 1
+        self.experience = 0
         
+        
+        self.equipped = {"Head":[], "Body":[], "Weapon":[], "Shield":[]}
         self.attack = 10
         self.defence = 10
         
@@ -51,7 +54,7 @@ class Player(pg.sprite.Sprite):
         Chest(self)
       
     def createItem(self):
-        self.itemInventory.add_item(Item())
+        self.inventory.add_item(Item())
     
     def update(self, deltatime):
         
@@ -85,12 +88,34 @@ class Player(pg.sprite.Sprite):
         
     def draw(self, screen):
         surface.blit(self.image, self.rect)
+
+class Enemy(pg.sprite.Sprite):
+    def __init__(self):
+        pg.sprite.Sprite.__init__(self,character_sprites)
+        self.image = setup.GFX['Enemy']
+        self.image.set_colorkey((255,255,255))
+        self.rect = self.image.get_rect()
+        self.rect.x = 64*8
+        self.rect.y = (64*8)+100
+        
+        self.healthCurrent = 100
+        self.healthMax = 100
+        self.healthRegen = 1
+        
+    def update(self, deltatime):
+        if self.healthCurrent <= 0:
+            self.kill()
+        
+    def draw(self):
+        surface.blit(self.image, self.rect)
+
+
         
 class Item(object):
     def __init__(self):
         self.image = setup.GFX['Sword_icon']
         self.name = "Sword"
-        self.type = "weapon"
+        self.type = "Weapon"
         self.isStackable = False
         self.price = 100
         self.amount = 1
@@ -142,6 +167,7 @@ class Spell(pg.sprite.Sprite):
             self.image.set_colorkey((0,0,0))
             self.direction = player.direction
             self.speed = 4
+            self.caster = player
             player.manaCurrent -= self.manaCost
             
     def update(self, deltatime):
@@ -159,10 +185,15 @@ class Spell(pg.sprite.Sprite):
             self.rect.x -= self.speed
             # self.rect.y += self.speed
             
-        hit = pg.sprite.spritecollide(self, object_sprites,False)
+        hit = pg.sprite.spritecollide(self, character_sprites,False)
         
         if hit:
-            self.kill()
+            if hit[0] != self.caster:
+                hit[0].healthCurrent -= 10
+                if hit[0].healthCurrent <=0:
+                    self.caster.experience +=10
+                
+                self.kill()
             
         if self.rect.x >= c.mapWidth*c.tileSize or self.rect.x <= -c.tileSize or self.rect.y >= c.mapHeight*c.tileSize or self.rect.y <= -c.tileSize:
             self.kill()
@@ -243,84 +274,123 @@ class GUI(object):
         GUIsurface.blit(textObj, (placePosition, 5))
         #Draw Mana
         textObj = self.font.render(str('MANA: ') +str(int(player.manaCurrent)) + str(' / ') + str(int(player.manaMax)), True, c.white, c.black)
-        GUIsurface.blit(textObj, (placePosition, 40))
+        GUIsurface.blit(textObj, (placePosition, 25))
+        #Draw level
+        textObj = self.font.render(str('Level: ') +str(int(player.level)), True, c.white, c.black)
+        GUIsurface.blit(textObj, (placePosition, 45))
+        #Draw Experience
+        textObj = self.font.render(str('Experience: ') +str(int(player.experience)) , True, c.white, c.black)
+        GUIsurface.blit(textObj, (placePosition, 65))
+        
         placePosition += 150
-        
-        #Draw resources
-        for item in player.inventory:
-            image = setup.TMX[item]
-        
-            textObj = self.font.render(str(player.inventory[item]), True, c.white, c.black)
-            GUIsurface.blit(image, (placePosition,5))
-            GUIsurface.blit(textObj, (placePosition,5))
-            placePosition +=70
-            
-            
+        #Print FPS
         textObj = self.font.render(str(fpsClock), True, c.white, c.black)
         GUIsurface.blit(textObj, (placePosition, 5))
         
+        #Print number of spell Sprites
         textObj = self.font.render(str(len(spell_sprites)), True, c.white, c.black)
-        GUIsurface.blit(textObj, (placePosition, 30))
+        GUIsurface.blit(textObj, (placePosition, 25))
         
+        #Print number of icon Sprites
         textObj = self.font.render(str(len(icon_sprites)), True, c.white, c.black)
-        GUIsurface.blit(textObj, (placePosition, 50))
+        GUIsurface.blit(textObj, (placePosition, 45))
         
         DISPLAYSURF.blit(GUIsurface,(0,0))
         
         icon_sprites.empty()
         #Draw inventory screen
         if self.playerInventory_shown:
-            #draw own inventory
+            #Draw own inventory
             placepositionx = 0
             placepositiony = 0
             
             playerInventorySurface = pg.Surface((128,320))
             playerInventorySurface.fill(c.white)
             
-            
-            for i in range(player.itemInventory.size):
+            #Draw player inventory  
+            #Draw empty spots
+            for i in range(player.inventory.size):
                 playerInventorySurface.blit(setup.GFX["Empty Inventory"], (placepositionx,placepositiony))
                 placepositiony += 64
                 if placepositiony >= 320:
                     placepositiony = 0
                     placepositionx += 64
                     
+                    
+            #Draw filled spots      
             placepositionx = 0
             placepositiony = 0
-            for item in player.itemInventory.items:
-                icon=Icon(item, player.itemInventory)
+            for item in player.inventory.items:
+                icon=Icon(item, player.inventory)
                 playerInventorySurface.blit(icon.image, (placepositionx,placepositiony))
-                icon.rect.x = placepositionx+400
+                icon.rect.x = placepositionx+512
                 icon.rect.y = placepositiony+100
                 placepositiony += 64
                 if placepositiony >= 320:
                     placepositiony = 0
                     placepositionx += 64
-            DISPLAYSURF.blit(playerInventorySurface,(400,100))
+            DISPLAYSURF.blit(playerInventorySurface,(512,100))
             
+            
+            #Draw chest inventory 
+            
+
             if len(player.colliders)>=1:
-                placepositionx = 0
-                placepositiony = 0
-                self.chestInventory_shown=True
                 
                 chestInventorySurface = pg.Surface((128,320))
                 chestInventorySurface.fill(c.white)
-
+                placepositionx = 0
+                placepositiony = 0
+                    
+                for i in range(player.inventory.size):
+                    chestInventorySurface.blit(setup.GFX["Empty Inventory"], (placepositionx,placepositiony))
+                    placepositiony += 64
+                    if placepositiony >= 320:
+                        placepositiony = 0
+                        placepositionx += 64
+                        
+                        
+                placepositionx = 0
+                placepositiony = 0
                 for item in player.colliders[0].inventory.items:
                     icon=Icon(item, player.colliders[0].inventory)
                     chestInventorySurface.blit(icon.image, (placepositionx,placepositiony))
-                    icon.rect.x = placepositionx+200
+                    icon.rect.x = placepositionx+320
                     icon.rect.y = placepositiony+100
                     placepositiony += 64
                     if placepositiony >= 320:
                         placepositiony = 0
                         placepositionx += 64
-                DISPLAYSURF.blit(chestInventorySurface,(200,100))
+                DISPLAYSURF.blit(chestInventorySurface,(320,100))
                 
 
         #Draw CharacterSheet screen
         if self.charactersheet_shown:
-            square = pg.draw.rect(DISPLAYSURF,c.white,(0,100,250,300))
+
+            placepositionx = 0
+            placepositiony = 0
+            
+            characterSheetSurface = pg.Surface((124,400))
+            characterSheetSurface.fill(c.white)
+            
+            for key in player.equipped:
+                textObj = self.font.render(str(key), True, c.white, c.black)
+                characterSheetSurface.blit(textObj, (placepositionx, placepositiony))
+                placepositiony +=20
+                
+                if player.equipped[key]:
+                    icon=Icon(player.equipped[key], player.equipped)
+                    icon.rect.x = placepositionx
+                    icon.rect.y = placepositiony+100
+                    characterSheetSurface.blit(icon.image, (placepositionx, placepositiony))
+                    
+                else:
+                    characterSheetSurface.blit(setup.GFX["Empty Inventory"], (placepositionx, placepositiony))
+                
+            
+                placepositiony +=80
+            
+            DISPLAYSURF.blit(characterSheetSurface,(0,100))
         
         #Draw MainMenu
         if self.mainmenu_shown:
