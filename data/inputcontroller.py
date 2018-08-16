@@ -52,11 +52,11 @@ def playerInput(gameControl):
                 gameControl.player.moveUp = True
                 gameControl.player.direction = 0
                 
-            # if(event.key == pg.K_SPACE):
-            #     currentTile = gameControl.world.tilemap[int(round((gameControl.player.rect.y-100)/64))][int(round(gameControl.player.rect.x/64))]
-            #     if currentTile.tileType!='Grass':
-            #         gameControl.player.inventory[currentTile.tileType]+=1
-            #         gameControl.world.tilemap[int(round((gameControl.player.rect.y-100)/64))][int(round(gameControl.player.rect.x/64))].tileType= 'Grass'
+            if(event.key == pg.K_SPACE):
+                currentTile = gameControl.world.tilemap[int(round((gameControl.player.rect.y-100)/64))][int(round(gameControl.player.rect.x/64))]
+                if not currentTile.hasCrop:
+                    currentTile.plant_crop(m.Crop())
+
             
             if(event.key == pg.K_1):
                 gameControl.player.castFireball()
@@ -68,7 +68,7 @@ def playerInput(gameControl):
                 gameControl.player.createChest()
                 
             if(event.key == pg.K_4):
-                print(gameControl.player.itemInventory.items) 
+                print(gameControl.player.inventory.items) 
                 
             if(event.key == pg.K_5):
                 m.Enemy()

@@ -16,8 +16,8 @@ class Player(pg.sprite.Sprite):
     def __init__(self):
         pg.sprite.Sprite.__init__(self,character_sprites)
         self.image = setup.GFX['Character']
-        self.image.convert_alpha()
-        self.image.set_colorkey((0,255,0))
+        # self.image.convert_alpha()
+        self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect()
         self.rect.x = 0
         self.rect.y = 100
@@ -59,8 +59,7 @@ class Player(pg.sprite.Sprite):
     def update(self, deltatime):
         
         self.colliders = pg.sprite.spritecollide(self, object_sprites, False)
-        # if colliders:
-            # print (colliders)
+
         
         self.currentTile=[int(round(self.rect.y-100)/64), int(round(self.rect.x/64))]
         
@@ -86,8 +85,9 @@ class Player(pg.sprite.Sprite):
                 self.rect.y +=self.moveSpeed 
 
         
-    def draw(self, screen):
+    def draw(self, surface):
         surface.blit(self.image, self.rect)
+        surface.blit(setup.GFX['Potato'], self.rect)
 
 class Enemy(pg.sprite.Sprite):
     def __init__(self):
@@ -106,7 +106,7 @@ class Enemy(pg.sprite.Sprite):
         if self.healthCurrent <= 0:
             self.kill()
         
-    def draw(self):
+    def draw(self, surface):
         surface.blit(self.image, self.rect)
 
 
@@ -151,7 +151,7 @@ class Chest(pg.sprite.Sprite):
     def update(self):
         pass
         
-    def draw (self, screen):
+    def draw (self, surface):
         surface.blit(self.image, self.rect)
         
         
@@ -173,36 +173,39 @@ class Spell(pg.sprite.Sprite):
     def update(self, deltatime):
         
         if self.direction == 0:
-            # self.rect.x += self.speed
             self.rect.y -= self.speed
         if self.direction == 1:
             self.rect.x += self.speed
-            # self.rect.y += self.speed
         if self.direction == 2:
-            # self.rect.x += self.speed
             self.rect.y += self.speed
         if self.direction == 3:
             self.rect.x -= self.speed
-            # self.rect.y += self.speed
             
         hit = pg.sprite.spritecollide(self, character_sprites,False)
         
         if hit:
             if hit[0] != self.caster:
-                hit[0].healthCurrent -= 10
+                hit[0].healthCurrent -= 25
                 if hit[0].healthCurrent <=0:
                     self.caster.experience +=10
                 
                 self.kill()
             
-        if self.rect.x >= c.mapWidth*c.tileSize or self.rect.x <= -c.tileSize or self.rect.y >= c.mapHeight*c.tileSize or self.rect.y <= -c.tileSize:
+        if self.rect.x >= c.mapWidth*c.tileSize or self.rect.x <= -c.tileSize or self.rect.y >= c.mapHeight*c.tileSize+100 or self.rect.y <= -c.tileSize:
             self.kill()
        
-    def draw(self, screen):
+    def draw(self, surface):
         surface.blit(self.image, self.rect)
         
+class Crop(object):        
+    def __init__(self):
         
-
+        self.image = setup.GFX['Potato']
+        self.rect = self.image.get_rect()
+        self.type = ["Potato"]
+        self.growTime = 10
+        self.time = 0
+        
 class Tile(pg.sprite.Sprite):
     def __init__(self,x,y,tileType):
         pg.sprite.Sprite.__init__(self, tile_sprites)
@@ -212,14 +215,26 @@ class Tile(pg.sprite.Sprite):
         self.rect.x = x*64
         self.rect.y = (y*64)+100
         self.isPassable = True
+        self.hasCrop = False
+        self.crop =[]
 
+    def plant_crop(self, crop):
+        print("Planting crop")
+        self.crop= crop
+        self.hasCrop = True
+        
+    def harvest_crop(self):
+        self.crop=[]
+        self.hasCrop = False
         
     def update(self):
         self.image = setup.TMX[self.tileType]
         
-    def draw(self,surface):
+    def draw(self, surface):
         surface.blit(self.image, self.rect+64)
-
+        
+        if self.hasCrop:
+            surface.blit(self.crop.image, self.rect+64)
         
         
 class World(object):
@@ -411,7 +426,6 @@ class GameControl(object):
         spell_sprites.update(self.deltatime)
         character_sprites.update(self.deltatime)
         
-        
     def update_screen(self):
         tile_sprites.draw(self.screen)
         spell_sprites.draw(self.screen)
@@ -437,7 +451,7 @@ class GameControl(object):
         
         print("Starting main loop")
         while not self.quit:
-            self.deltatime = self.clock.tick()/1000
+            self.deltatime = self.clock.tick(100)/1000
             self.fpsClock = self.clock.get_fps()
             
             #Update game events
