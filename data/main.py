@@ -6,6 +6,7 @@ import pygame as pg
 import random
 
 tile_sprites = pg.sprite.Group()
+crop_sprites = pg.sprite.Group()
 character_sprites = pg.sprite.Group()
 object_sprites = pg.sprite.Group()
 spell_sprites = pg.sprite.Group()
@@ -197,14 +198,37 @@ class Spell(pg.sprite.Sprite):
     def draw(self, surface):
         surface.blit(self.image, self.rect)
         
-class Crop(object):        
-    def __init__(self):
+class Job(object):
+    def __init__(self,tile):
+        self.time = 1
+    
+class JobQueue(object):
+    def __init(self):
+        self.jobs = []
         
+    def add_job(self, job):
+        self.jobs.append(job)
+            
+    def remove_job(self, job):
+        self.jobs.remove(job)
+        
+class Crop(pg.sprite.Sprite):        
+    def __init__(self,tile):
+        pg.sprite.Sprite.__init__(self, crop_sprites)
         self.image = setup.GFX['Potato']
         self.rect = self.image.get_rect()
+        self.rect.x = tile.rect.x
+        self.rect.y = tile.rect.y
         self.type = ["Potato"]
         self.growTime = 10
         self.time = 0
+        self.canHarvest = False
+        
+    def update(self, deltatime):
+        if self.time < self.growTime:
+            self.time += deltatime
+        if self.time >= self.growTime:
+            self.canHarvest = True
         
 class Tile(pg.sprite.Sprite):
     def __init__(self,x,y,tileType):
@@ -234,7 +258,7 @@ class Tile(pg.sprite.Sprite):
         surface.blit(self.image, self.rect+64)
         
         if self.hasCrop:
-            surface.blit(self.crop.image, self.rect+64)
+            surface.blit(self.crop.image, self.crop.rect)
         
         
 class World(object):
@@ -423,11 +447,13 @@ class GameControl(object):
     def update_events(self):
         inputcontroller.playerInput(self)
         tile_sprites.update()
+        crop_sprites.update(self.deltatime)
         spell_sprites.update(self.deltatime)
         character_sprites.update(self.deltatime)
         
     def update_screen(self):
         tile_sprites.draw(self.screen)
+        crop_sprites.draw(self.screen)
         spell_sprites.draw(self.screen)
         object_sprites.draw(self.screen)
         character_sprites.draw(self.screen)
@@ -451,7 +477,7 @@ class GameControl(object):
         
         print("Starting main loop")
         while not self.quit:
-            self.deltatime = self.clock.tick(100)/1000
+            self.deltatime = self.clock.tick()/1000
             self.fpsClock = self.clock.get_fps()
             
             #Update game events

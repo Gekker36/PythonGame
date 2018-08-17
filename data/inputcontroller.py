@@ -55,7 +55,7 @@ def playerInput(gameControl):
             if(event.key == pg.K_SPACE):
                 currentTile = gameControl.world.tilemap[int(round((gameControl.player.rect.y-100)/64))][int(round(gameControl.player.rect.x/64))]
                 if not currentTile.hasCrop:
-                    currentTile.plant_crop(m.Crop())
+                    currentTile.plant_crop(m.Crop(currentTile))
 
             
             if(event.key == pg.K_1):
