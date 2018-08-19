@@ -1,5 +1,5 @@
-mapWidth  = 10
-mapHeight = 10
+mapWidth  = 20
+mapHeight = 20
 tileSize  = 64
 SCREEN_SIZE = (800, 608)
 

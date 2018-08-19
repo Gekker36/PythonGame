@@ -4,39 +4,49 @@ from . import setup, tools, inputcontroller, player
 from . import constants as c
 import pygame as pg
 import random
+import math
 
 tile_sprites = pg.sprite.Group()
-crop_sprites = pg.sprite.Group()
-character_sprites = pg.sprite.Group()
-object_sprites = pg.sprite.Group()
-spell_sprites = pg.sprite.Group()
-icon_sprites = pg.sprite.Group()
+# crop_sprites = pg.sprite.Group()
+# character_sprites = pg.sprite.Group()
+# object_sprites = pg.sprite.Group()
+# spell_sprites = pg.sprite.Group()
+# icon_sprites = pg.sprite.Group()
+
+ANGLE_UNIT_SPEED = math.sqrt(2)/2
+DIRECT_DICT = {pg.K_LEFT  : (-1, 0),
+               pg.K_RIGHT : ( 1, 0),
+               pg.K_UP    : ( 0,-1),
+               pg.K_DOWN  : ( 0, 1)}
 
 
 class Player(pg.sprite.Sprite):
-    def __init__(self):
-        pg.sprite.Sprite.__init__(self,character_sprites)
-        self.image = setup.GFX['Character']
+    def __init__(self, location, direction=pg.K_RIGHT):
+        # pg.sprite.Sprite.__init__(self,character_sprites)
+        self.image = setup.GFX['Potato']
         # self.image.convert_alpha()
         self.image.set_colorkey((255,255,255))
-        self.rect = self.image.get_rect()
-        self.rect.x = 0
-        self.rect.y = 100
-        self.moveLeft = False
-        self.moveRight = False
-        self.moveUp = False
-        self.moveDown = False
+        self.rect = self.image.get_rect(topleft = location)
+
         self.colliders=[]
         
-        self.direction = 2
-        self.inventory = Inventory()
+        
+        self.true_pos = list(self.rect.center)
+        self.remainder = [0, 0]  #Adjust rect in integers; save remainders.
+        self.direction = direction
+        self.old_direction = None  #The Players previous direction every frame.
+        self.direction_stack = []  #Held keys in the order they were pressed.
+        self.redraw = False  #Force redraw if needed.
+        
+        self.moveSpeed = 500
+        # self.inventory = Inventory()
         self.healthCurrent = 100
         self.healthMax = 100
         self.healthRegen = 1
         self.manaCurrent = 50
         self.manaMax = 100
         self.manaRegen = 10
-        self.moveSpeed = 2
+        
         self.level = 1
         self.experience = 0
         
@@ -46,189 +56,75 @@ class Player(pg.sprite.Sprite):
         self.defence = 10
         
         
-    def castFireball(self):
-        print("Casting Fireball")
-        Spell(self)
-    
-    def createChest(self):
-        print("Creating Chest")
-        Chest(self)
-      
-    def createItem(self):
-        self.inventory.add_item(Item())
-    
-    def update(self, deltatime):
         
-        self.colliders = pg.sprite.spritecollide(self, object_sprites, False)
-
-        
-        self.currentTile=[int(round(self.rect.y-100)/64), int(round(self.rect.x/64))]
-        
-        if self.healthCurrent < self.healthMax:
-            self.healthCurrent += self.healthRegen*deltatime
-        if self.manaCurrent < self.manaMax:
-            self.manaCurrent += self.manaRegen*deltatime
+    # def castFireball(self):
+    #     print("Casting Fireball")
+    #     Spell(self)
+    # 
+    # def createChest(self):
+    #     print("Creating Chest")
+    #     Chest(self)
+    #   
+    # def createItem(self):
+    #     self.inventory.add_item(Item())
+    #     
+    # def gainExperience(self, experience):
+    #     self.experience += experience
             
-        if self.moveLeft == True:
-            if self.rect.x > 0:
-                self.rect.x -=self.moveSpeed
-            
-        if self.moveRight == True:
-            if self.rect.x < (c.mapWidth-1)*64:
-                self.rect.x += self.moveSpeed
-               
-        if self.moveUp == True:
-            if self.rect.y > 100:
-                self.rect.y -= self.moveSpeed
-                   
-        if self.moveDown == True:
-            if self.rect.y < ((c.mapHeight-1)*64)+100:
-                self.rect.y +=self.moveSpeed 
+    def add_direction(self, key):
+        """Add a pressed direction key on the direction stack."""
+        if key in DIRECT_DICT:
+            if key in self.direction_stack:
+                self.direction_stack.remove(key)
+            self.direction_stack.append(key)
+            self.direction = self.direction_stack[-1]
 
-        
-    def draw(self, surface):
-        surface.blit(self.image, self.rect)
-        surface.blit(setup.GFX['Potato'], self.rect)
-
-class Enemy(pg.sprite.Sprite):
-    def __init__(self):
-        pg.sprite.Sprite.__init__(self,character_sprites)
-        self.image = setup.GFX['Enemy']
-        self.image.set_colorkey((255,255,255))
-        self.rect = self.image.get_rect()
-        self.rect.x = 64*8
-        self.rect.y = (64*8)+100
-        
-        self.healthCurrent = 100
-        self.healthMax = 100
-        self.healthRegen = 1
-        
-    def update(self, deltatime):
-        if self.healthCurrent <= 0:
-            self.kill()
-        
-    def draw(self, surface):
-        surface.blit(self.image, self.rect)
-
-
-        
-class Item(object):
-    def __init__(self):
-        self.image = setup.GFX['Sword_icon']
-        self.name = "Sword"
-        self.type = "Weapon"
-        self.isStackable = False
-        self.price = 100
-        self.amount = 1
-        
-        
-class Inventory(object):
-    def __init__(self):
-        self.size = 10
-        self.items=[]
-
-        
-    def add_item(self, item):
-        if len(self.items)<self.size:
-            self.items.append(item)
-        else:
-            print("Inventory is full")
-            
-    def remove_item(self, item):
-        self.items.remove(item)
-        
-        
-class Chest(pg.sprite.Sprite):
-    def __init__(self, player):
-        pg.sprite.Sprite.__init__(self,object_sprites)
-        self.inventory = Inventory()
-        self.image = setup.GFX["Chest Closed"]
-        self.rect = self.image.get_rect()
-        self.rect.x = player.currentTile[1]*64
-        self.rect.y = player.currentTile[0]*64+100
-        self.isOpen = False
-        
-        
-    def update(self):
-        pass
-        
-    def draw (self, surface):
-        surface.blit(self.image, self.rect)
-        
-        
-class Spell(pg.sprite.Sprite):
-    def __init__(self, player):
-        self.manaCost = 10
-        if player.manaCurrent >= self.manaCost:
-            pg.sprite.Sprite.__init__(self,spell_sprites)
-            self.image = setup.GFX['Orb of Flame']
-            self.rect = self.image.get_rect()
-            self.rect.x = player.rect.x
-            self.rect.y = player.rect.y
-            self.image.set_colorkey((0,0,0))
-            self.direction = player.direction
-            self.speed = 4
-            self.caster = player
-            player.manaCurrent -= self.manaCost
-            
-    def update(self, deltatime):
-        
-        if self.direction == 0:
-            self.rect.y -= self.speed
-        if self.direction == 1:
-            self.rect.x += self.speed
-        if self.direction == 2:
-            self.rect.y += self.speed
-        if self.direction == 3:
-            self.rect.x -= self.speed
-            
-        hit = pg.sprite.spritecollide(self, character_sprites,False)
-        
-        if hit:
-            if hit[0] != self.caster:
-                hit[0].healthCurrent -= 25
-                if hit[0].healthCurrent <=0:
-                    self.caster.experience +=10
+    def pop_direction(self, key):
+        """Pop a released key from the direction stack."""
+        if key in DIRECT_DICT:
+            if key in self.direction_stack:
+                self.direction_stack.remove(key)
+            if self.direction_stack:
+                self.direction = self.direction_stack[-1]      
                 
-                self.kill()
+    def update(self, obstacles, deltatime):
+        """Adjust the image and move as needed."""
+        vector = [0, 0]
+        for key in self.direction_stack:
+            vector[0] += DIRECT_DICT[key][0]
+            vector[1] += DIRECT_DICT[key][1]
+        factor = (ANGLE_UNIT_SPEED if all(vector) else 1)
+        frame_speed = self.moveSpeed*factor*deltatime
+        self.remainder[0] += vector[0]*frame_speed
+        self.remainder[1] += vector[1]*frame_speed
+        vector[0], self.remainder[0] = divfmod(self.remainder[0], 1)
+        vector[1], self.remainder[1] = divfmod(self.remainder[1], 1)
+        if vector != [0, 0]:
+            self.movement(obstacles, vector[0], 0)
+            self.movement(obstacles, vector[1], 1)
             
-        if self.rect.x >= c.mapWidth*c.tileSize or self.rect.x <= -c.tileSize or self.rect.y >= c.mapHeight*c.tileSize+100 or self.rect.y <= -c.tileSize:
-            self.kill()
-       
+    def movement(self, obstacles, offset, i):
+        """Move player and then check for collisions; adjust as necessary."""
+        self.rect[i] += offset
+        collisions = pg.sprite.spritecollide(self, obstacles, False)
+        callback = pg.sprite.collide_mask
+        while pg.sprite.spritecollideany(self, collisions, callback):
+            self.rect[i] += (1 if offset<0 else -1)
+            self.remainder[i] = 0
+                
     def draw(self, surface):
         surface.blit(self.image, self.rect)
         
-class Job(object):
-    def __init__(self,tile):
-        self.time = 1
-    
-class JobQueue(object):
-    def __init(self):
-        self.jobs = []
         
-    def add_job(self, job):
-        self.jobs.append(job)
-            
-    def remove_job(self, job):
-        self.jobs.remove(job)
-        
-class Crop(pg.sprite.Sprite):        
-    def __init__(self,tile):
-        pg.sprite.Sprite.__init__(self, crop_sprites)
-        self.image = setup.GFX['Potato']
-        self.rect = self.image.get_rect()
-        self.rect.x = tile.rect.x
-        self.rect.y = tile.rect.y
-        self.type = ["Potato"]
-        self.growTime = 10
-        self.time = 0
-        self.canHarvest = False
-        
-    def update(self, deltatime):
-        if self.time < self.growTime:
-            self.time += deltatime
-        if self.time >= self.growTime:
-            self.canHarvest = True
+class Block(pg.sprite.Sprite):
+    """Something to run head-first into."""
+    def __init__(self, location):
+        """The location argument is where I will be located."""
+        pg.sprite.Sprite.__init__(self)
+        self.image = setup.GFX['stone_block']
+        self.rect = self.image.get_rect(topleft = location)
+        self.mask = pg.mask.from_surface(self.image)
+
         
 class Tile(pg.sprite.Sprite):
     def __init__(self,x,y,tileType):
@@ -237,7 +133,9 @@ class Tile(pg.sprite.Sprite):
         self.image = setup.TMX[tileType]
         self.rect = self.image.get_rect()
         self.rect.x = x*64
-        self.rect.y = (y*64)+100
+        self.rect.y = y*64
+        self.mask = pg.mask.from_surface(self.image)
+        
         self.isPassable = True
         self.hasCrop = False
         self.crop =[]
@@ -262,17 +160,16 @@ class Tile(pg.sprite.Sprite):
         
         
 class World(object):
-    def __init__(self):
+    def __init__(self,viewport):
         self.mapHeight = c.mapHeight
         self.mapWidth = c.mapWidth
         self.tileSize = c.tileSize
         self.worldGenerator()
-        self.tilemap
-        
     
     def worldGenerator(self):
         print("Create tilemap")
         self.tilemap = [[Tile(w,h,'Grass') for w in range(self.mapWidth)] for h in range(self.mapHeight)]
+        self.obstacles = pg.sprite.Group([Block((64*5,64*8)), Block((64*9,64*6)), Block((64*3,64*1))])
         
         for h in range(self.mapHeight):
             for w in range(self.mapWidth):
@@ -280,221 +177,81 @@ class World(object):
                     self.tilemap[h][w]= Tile(w,h,'Water')
                 if random.randint(1,100)<15 :
                     self.tilemap[h][w]= Tile(w,h,'Stone')
-                    
-                    
-class Icon(pg.sprite.Sprite):
-    def __init__(self, base, inventory):
-        pg.sprite.Sprite.__init__(self, icon_sprites)
-        
-        self.item = base
-        self.image = self.item.image
-        self.rect = self.image.get_rect()
-        self.inventory = inventory
-        
-    
 
-class GUI(object):
+
+class Control(object):
     def __init__(self):
-        self.font = pg.font.SysFont('arial',18)
-        self.playerInventory_shown = False
-        self.charactersheet_shown = False
-        self.mainmenu_shown = False
-        self.chestInventory_shown = False
-
-    def update_GUI(self,DISPLAYSURF, player, fpsClock):
-        
-        
-        #Draw Top GUI
-        placePosition = 10
-        GUIsurface = pg.Surface((c.mapWidth*c.tileSize, 100))
-        
-        #Draw Health
-        textObj = self.font.render(str('HEALTH: ') +str(int(player.healthCurrent)) + str(' / ') + str(int(player.healthMax)), True, c.white, c.black)
-        GUIsurface.blit(textObj, (placePosition, 5))
-        #Draw Mana
-        textObj = self.font.render(str('MANA: ') +str(int(player.manaCurrent)) + str(' / ') + str(int(player.manaMax)), True, c.white, c.black)
-        GUIsurface.blit(textObj, (placePosition, 25))
-        #Draw level
-        textObj = self.font.render(str('Level: ') +str(int(player.level)), True, c.white, c.black)
-        GUIsurface.blit(textObj, (placePosition, 45))
-        #Draw Experience
-        textObj = self.font.render(str('Experience: ') +str(int(player.experience)) , True, c.white, c.black)
-        GUIsurface.blit(textObj, (placePosition, 65))
-        
-        placePosition += 150
-        #Print FPS
-        textObj = self.font.render(str(fpsClock), True, c.white, c.black)
-        GUIsurface.blit(textObj, (placePosition, 5))
-        
-        #Print number of spell Sprites
-        textObj = self.font.render(str(len(spell_sprites)), True, c.white, c.black)
-        GUIsurface.blit(textObj, (placePosition, 25))
-        
-        #Print number of icon Sprites
-        textObj = self.font.render(str(len(icon_sprites)), True, c.white, c.black)
-        GUIsurface.blit(textObj, (placePosition, 45))
-        
-        DISPLAYSURF.blit(GUIsurface,(0,0))
-        
-        icon_sprites.empty()
-        #Draw inventory screen
-        if self.playerInventory_shown:
-            #Draw own inventory
-            placepositionx = 0
-            placepositiony = 0
-            
-            playerInventorySurface = pg.Surface((128,320))
-            playerInventorySurface.fill(c.white)
-            
-            #Draw player inventory  
-            #Draw empty spots
-            for i in range(player.inventory.size):
-                playerInventorySurface.blit(setup.GFX["Empty Inventory"], (placepositionx,placepositiony))
-                placepositiony += 64
-                if placepositiony >= 320:
-                    placepositiony = 0
-                    placepositionx += 64
-                    
-                    
-            #Draw filled spots      
-            placepositionx = 0
-            placepositiony = 0
-            for item in player.inventory.items:
-                icon=Icon(item, player.inventory)
-                playerInventorySurface.blit(icon.image, (placepositionx,placepositiony))
-                icon.rect.x = placepositionx+512
-                icon.rect.y = placepositiony+100
-                placepositiony += 64
-                if placepositiony >= 320:
-                    placepositiony = 0
-                    placepositionx += 64
-            DISPLAYSURF.blit(playerInventorySurface,(512,100))
-            
-            
-            #Draw chest inventory 
-            
-
-            if len(player.colliders)>=1:
-                
-                chestInventorySurface = pg.Surface((128,320))
-                chestInventorySurface.fill(c.white)
-                placepositionx = 0
-                placepositiony = 0
-                    
-                for i in range(player.inventory.size):
-                    chestInventorySurface.blit(setup.GFX["Empty Inventory"], (placepositionx,placepositiony))
-                    placepositiony += 64
-                    if placepositiony >= 320:
-                        placepositiony = 0
-                        placepositionx += 64
-                        
-                        
-                placepositionx = 0
-                placepositiony = 0
-                for item in player.colliders[0].inventory.items:
-                    icon=Icon(item, player.colliders[0].inventory)
-                    chestInventorySurface.blit(icon.image, (placepositionx,placepositiony))
-                    icon.rect.x = placepositionx+320
-                    icon.rect.y = placepositiony+100
-                    placepositiony += 64
-                    if placepositiony >= 320:
-                        placepositiony = 0
-                        placepositionx += 64
-                DISPLAYSURF.blit(chestInventorySurface,(320,100))
-                
-
-        #Draw CharacterSheet screen
-        if self.charactersheet_shown:
-
-            placepositionx = 0
-            placepositiony = 0
-            
-            characterSheetSurface = pg.Surface((124,400))
-            characterSheetSurface.fill(c.white)
-            
-            for key in player.equipped:
-                textObj = self.font.render(str(key), True, c.white, c.black)
-                characterSheetSurface.blit(textObj, (placepositionx, placepositiony))
-                placepositiony +=20
-                
-                if player.equipped[key]:
-                    icon=Icon(player.equipped[key], player.equipped)
-                    icon.rect.x = placepositionx
-                    icon.rect.y = placepositiony+100
-                    characterSheetSurface.blit(icon.image, (placepositionx, placepositiony))
-                    
-                else:
-                    characterSheetSurface.blit(setup.GFX["Empty Inventory"], (placepositionx, placepositiony))
-                
-            
-                placepositiony +=80
-            
-            DISPLAYSURF.blit(characterSheetSurface,(0,100))
-        
-        #Draw MainMenu
-        if self.mainmenu_shown:
-            square = pg.draw.rect(DISPLAYSURF,c.white,(400,100,250,300))
-
-class GameControl(object):
-    def __init__(self):
-        self.screen = setup.SCREEN
-        self.screen_rect = setup.SCREEN_RECT
+        self.screen = pg.display.get_surface()
+        self.screen_rect = self.screen.get_rect()
         self.clock = pg.time.Clock()
-        self.quit = False
-        
-        
-        
-    def update_events(self):
-        inputcontroller.playerInput(self)
-        tile_sprites.update()
-        crop_sprites.update(self.deltatime)
-        spell_sprites.update(self.deltatime)
-        character_sprites.update(self.deltatime)
-        
-    def update_screen(self):
-        tile_sprites.draw(self.screen)
-        crop_sprites.draw(self.screen)
-        spell_sprites.draw(self.screen)
-        object_sprites.draw(self.screen)
-        character_sprites.draw(self.screen)
-        self.gui.update_GUI(self.screen,self.player,self.fpsClock)
-        
-        
-    def main(self):
-        print("GameControl init")
-        
-        # print("Create sprite group")
-        # sprites = pg.sprite.Group()
-        
-        print("Create world")
-        self.world = World()
-        
-        print("Create player")
-        self.player = Player()
-        
-        print("Create GUI")
-        self.gui = GUI()
-        
-        print("Starting main loop")
-        while not self.quit:
-            self.deltatime = self.clock.tick()/1000
-            self.fpsClock = self.clock.get_fps()
-            
-            #Update game events
-            self.update_events()
-            
-            #Draw game sprites
-            self.update_screen()
-            
-            pg.display.update()
-        
-        
+        self.done = False
+        self.keys=pg.key.get_pressed()
         
 
-def main():
+       
+        self.player = Player((400,400))
+        self.viewport = self.screen.get_rect()
+        self.level = pg.Surface((5000,5000)).convert()
+        self.level_rect = self.level.get_rect()
+
+        
+    def event_loop(self):
+        for event in pg.event.get():
+            self.keys = pg.key.get_pressed()
+            if event.type == pg.QUIT or self.keys[pg.K_ESCAPE]:
+                self.done = True
+            elif event.type == pg.KEYDOWN:
+                self.player.add_direction(event.key)
+            elif event.type == pg.KEYUP:
+                self.player.pop_direction(event.key)
+                
+    def update(self,deltatime):
+        self.player.update(self.world.obstacles, deltatime)
+        self.update_viewport()
+        
+    def update_viewport(self):
+        self.viewport.center = self.player.rect.center
+        self.viewport.clamp_ip(self.level_rect)
+        
+    def draw(self):
+        # self.level.fill(pg.Color("lightblue"))
+        tile_sprites.draw(self.level)
+        self.world.obstacles.draw(self.level)
+        self.player.draw(self.level)
+        self.screen.blit(self.level, (0,0), self.viewport)
+        pg.display.update()
+
+    def display_fps(self):
+        """Show the program's FPS in the window handle."""
+        caption = "{} - FPS: {:.2f}".format("Test Pygame", int(self.clock.get_fps()))
+        pg.display.set_caption(caption)
+        
+  
+    def main(self):
+
+        print("Create world")
+        self.world = World(self.screen_rect.copy())
+
+        print("Starting main loop")
+        while not self.done:
+            self.deltatime = self.clock.tick(60)/1000
+            self.event_loop()
+            self.update(self.deltatime)
+            self.draw()
+            pg.display.update()
+            self.display_fps()
+        
+        
+def divfmod(x, y):
+    """Identical to the builtin divmod but using math.fmod to retain signs."""
+    fmod = math.fmod(x, y)
+    div = (x-fmod)//y
+    return div, fmod
     
+        
+def main():
     print("Create GameControl")
-    gameControl = GameControl().main()
+    gameControl = Control().main()
     
 
     
