@@ -51,7 +51,7 @@ def playerInput(control):
             if(event.key == pg.K_2):
                 mousePos = pg.mouse.get_pos()
                 worldPos = mousePos[0]+control.viewport[0],mousePos[1]+control.viewport[1]
-                m.Enemy(worldPos)
+                m.Enemy(worldPos,control.player)
 
             #     
             # if(event.key == pg.K_3):

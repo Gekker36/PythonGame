@@ -1,6 +1,6 @@
 from data.states import  level #, death, shop, levels, battle,
 # from data.states import credits
-from . import setup, tools, inputcontroller, player
+from . import setup, tools, inputcontroller
 from . import constants as c
 import pygame as pg
 import random
@@ -114,7 +114,7 @@ class Player(pg.sprite.Sprite):
         surface.blit(self.image, self.rect)
         
 class Enemy(pg.sprite.Sprite):
-    def __init__(self, location):
+    def __init__(self, location,player):
         pg.sprite.Sprite.__init__(self,character_sprites)
         self.image = setup.GFX['Enemy'].convert()
         self.image.set_colorkey((255,255,255))
@@ -125,10 +125,27 @@ class Enemy(pg.sprite.Sprite):
         self.healthCurrent = 100
         self.healthMax = 100
         self.healthRegen = 1
+        self.movespeed = 5
+        self.target = player
+
+    def set_target(self, target):
+        self.target = target
         
-    def update(self, deltatime):
+    def update(self, dt):
         if self.healthCurrent <= 0:
             self.kill()
+            
+        if self.target.rect.x < self.rect.x:
+            self.rect.x -= self.movespeed*dt
+        else:
+            self.rect.x += self.movespeed*dt
+        # if self.target.rect.x < self.rect.x:
+        #     self.rect.x -= self.movespeed*dt
+          
+        # if self.target.rect.y >= self.rect.y:
+        #     self.rect.y += self.movespeed*dt
+        # else:
+        #     self.rect.y += self.movespeed*dt*-1
         
     def draw(self, surface):
         
@@ -187,9 +204,8 @@ class Block(pg.sprite.Sprite):
         self.mask = pg.mask.from_surface(self.image)
 
         
-class Tile(pg.sprite.Sprite):
+class Tile(object):
     def __init__(self,x,y,tileType):
-        pg.sprite.Sprite.__init__(self)
         self.tileType = tileType
         self.image = setup.TMX[tileType].convert_alpha()
         self.rect = self.image.get_rect()
@@ -215,7 +231,7 @@ class Tile(pg.sprite.Sprite):
         pass
         
     def draw(self, surface):
-        pass
+        surface.blit(self.image, self.rect)
 
         
 class World(object):
@@ -224,18 +240,29 @@ class World(object):
         self.mapWidth = c.mapWidth
         self.tileSize = c.tileSize
         self.worldGenerator()
+
     
     def worldGenerator(self):
         print("Create tilemap")
-        self.tilemap = [[Tile(w,h,'Grass') for w in range(self.mapWidth)] for h in range(self.mapHeight)]
+        
+        self.tilemap=[]
+        
+        for h in range(self.mapHeight):
+            for w in range(self.mapWidth):
+                self.tilemap.append(Tile(w,h,'Grass'))
         
         obstacles = [Block((64*w,0)) for w in range(self.mapWidth)]
         obstacles.append([Block((64*w,(self.mapHeight-1)*self.tileSize)) for w in range(self.mapWidth)])
         obstacles.append([Block((0,64*h)) for h in range(self.mapHeight)])
         obstacles.append([Block(((self.mapWidth-1)*self.tileSize,64*h)) for h in range(self.mapHeight)])
         self.obstacles = pg.sprite.Group(obstacles)
-        self.tiles = pg.sprite.Group(self.tilemap)
+
+    def update(dt):
+        pass
         
+    def draw(self, surface):
+        for tile in self.tilemap:
+            tile.draw(surface)
 
 
 class Control(object):
@@ -245,7 +272,8 @@ class Control(object):
         self.clock = pg.time.Clock()
         self.done = False
         self.keys=pg.key.get_pressed()
-        self.printtimer = 0
+        self.logictimer = 0
+        self.drawtimer = 0
 
        
         self.player = Player((400,400))
@@ -259,17 +287,16 @@ class Control(object):
 
                 
     def update(self,deltatime):
-        
+        t = time.time()
         self.player.update(self.world.obstacles, deltatime)
         spell_sprites.update(deltatime)
         character_sprites.update(deltatime)
         self.update_viewport()
         
-        self.printtimer +=deltatime
-        if self.printtimer>1:
-            print(character_sprites)
-            self.printtimer=0
-            renderedSprites =0
+        self.logictimer +=deltatime
+        if self.logictimer>1:
+            print(str('logictimer: ') + str(time.time()-t))
+            self.logictimer=0
         
     def update_viewport(self):
         self.viewport.center = self.player.rect.center
@@ -280,16 +307,22 @@ class Control(object):
             length = 64*(enemy.healthCurrent/enemy.healthMax)
             pg.draw.rect(screen, c.red, (enemy.rect.x,enemy.rect.y-15,length,10))
         
-    def draw(self):
-        self.world.tiles.draw(self.level)
+    def draw(self, deltatime):
+        t = time.time()
+        self.world.draw(self.level)
         self.world.obstacles.draw(self.level)
         spell_sprites.draw(self.level)
         character_sprites.draw(self.level)
         self.player.draw(self.level)
         self.healthbars(self.level)
         self.screen.blit(self.level, (0,0), self.viewport)
-        
         pg.display.update()
+        
+
+        self.drawtimer +=deltatime
+        if self.drawtimer>1:
+            print(str('drawtimer: ') + str(time.time()-t))
+            self.drawtimer=0
         
     def display_fps(self):
         """Show the program's FPS in the window handle."""
@@ -306,7 +339,7 @@ class Control(object):
             self.deltatime = self.clock.tick()/1000
             self.event_loop()
             self.update(self.deltatime)
-            self.draw()
+            self.draw(self.deltatime)
             pg.display.update()
             self.display_fps()
         
