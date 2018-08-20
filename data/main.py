@@ -5,13 +5,15 @@ from . import constants as c
 import pygame as pg
 import random
 import math
+import time
 
-tile_sprites = pg.sprite.Group()
+
 # crop_sprites = pg.sprite.Group()
-# character_sprites = pg.sprite.Group()
+character_sprites = pg.sprite.Group()
 # object_sprites = pg.sprite.Group()
-# spell_sprites = pg.sprite.Group()
+spell_sprites = pg.sprite.Group()
 # icon_sprites = pg.sprite.Group()
+
 
 ANGLE_UNIT_SPEED = math.sqrt(2)/2
 DIRECT_DICT = {pg.K_LEFT  : (-1, 0),
@@ -23,14 +25,10 @@ DIRECT_DICT = {pg.K_LEFT  : (-1, 0),
 class Player(pg.sprite.Sprite):
     def __init__(self, location, direction=pg.K_RIGHT):
         # pg.sprite.Sprite.__init__(self,character_sprites)
-        self.image = setup.GFX['Potato']
-        # self.image.convert_alpha()
+        self.image = setup.GFX['Character'].convert()
         self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect(topleft = location)
 
-        self.colliders=[]
-        
-        
         self.true_pos = list(self.rect.center)
         self.remainder = [0, 0]  #Adjust rect in integers; save remainders.
         self.direction = direction
@@ -55,11 +53,12 @@ class Player(pg.sprite.Sprite):
         self.attack = 10
         self.defence = 10
         
+    def gainExperience(self, experience):
+        self.experience += experience
         
-        
-    # def castFireball(self):
-    #     print("Casting Fireball")
-    #     Spell(self)
+    def castFireball(self):
+        print("Casting Fireball")
+        Spell(self)
     # 
     # def createChest(self):
     #     print("Creating Chest")
@@ -68,8 +67,7 @@ class Player(pg.sprite.Sprite):
     # def createItem(self):
     #     self.inventory.add_item(Item())
     #     
-    # def gainExperience(self, experience):
-    #     self.experience += experience
+   
             
     def add_direction(self, key):
         """Add a pressed direction key on the direction stack."""
@@ -115,22 +113,85 @@ class Player(pg.sprite.Sprite):
     def draw(self, surface):
         surface.blit(self.image, self.rect)
         
+class Enemy(pg.sprite.Sprite):
+    def __init__(self, location):
+        pg.sprite.Sprite.__init__(self,character_sprites)
+        self.image = setup.GFX['Enemy'].convert()
+        self.image.set_colorkey((255,255,255))
+        self.rect = self.image.get_rect()
+        self.rect.x = location[0]
+        self.rect.y = location[1]
         
+        self.healthCurrent = 100
+        self.healthMax = 100
+        self.healthRegen = 1
+        
+    def update(self, deltatime):
+        if self.healthCurrent <= 0:
+            self.kill()
+        
+    def draw(self, surface):
+        
+        surface.blit(self.image, self.rect) 
+        
+class Spell(pg.sprite.Sprite):
+    def __init__(self, player):
+        self.manaCost = 10
+        if player.manaCurrent >= self.manaCost:
+            pg.sprite.Sprite.__init__(self, spell_sprites)
+            self.image = setup.GFX['Orb of Flame'].convert()
+            self.rect = self.image.get_rect()
+            self.rect.x = player.rect.x
+            self.rect.y = player.rect.y
+            self.image.set_colorkey((0,0,0))
+            self.direction = player.direction
+            self.speed = 4
+            self.caster = player
+            # player.manaCurrent -= self.manaCost
+            
+    def update(self, deltatime):
+        
+        if self.direction == 273:
+            self.rect.y -= self.speed #UP
+        if self.direction == 275:
+            self.rect.x += self.speed #Right
+        if self.direction == 274:
+            self.rect.y += self.speed #DOWN
+        if self.direction == 276:
+            self.rect.x -= self.speed #LEFT
+            
+        hit = pg.sprite.spritecollide(self, character_sprites,False)
+        
+        if hit:
+            if hit[0] != self.caster:
+                hit[0].healthCurrent -= 25
+                if hit[0].healthCurrent <=0:
+                    self.caster.gainExperience(10)
+                
+                self.kill()
+            
+        if self.rect.x >= c.mapWidth*c.tileSize or self.rect.x <= -c.tileSize or self.rect.y >= c.mapHeight*c.tileSize or self.rect.y <= -c.tileSize:
+            self.kill()
+       
+    def draw(self, surface):
+        surface.blit(self.image, self.rect)  
+        
+          
 class Block(pg.sprite.Sprite):
     """Something to run head-first into."""
     def __init__(self, location):
         """The location argument is where I will be located."""
         pg.sprite.Sprite.__init__(self)
-        self.image = setup.GFX['stone_block']
+        self.image = setup.GFX['stone_block'].convert()
         self.rect = self.image.get_rect(topleft = location)
         self.mask = pg.mask.from_surface(self.image)
 
         
 class Tile(pg.sprite.Sprite):
     def __init__(self,x,y,tileType):
-        pg.sprite.Sprite.__init__(self, tile_sprites)
+        pg.sprite.Sprite.__init__(self)
         self.tileType = tileType
-        self.image = setup.TMX[tileType]
+        self.image = setup.TMX[tileType].convert_alpha()
         self.rect = self.image.get_rect()
         self.rect.x = x*64
         self.rect.y = y*64
@@ -151,13 +212,11 @@ class Tile(pg.sprite.Sprite):
         
     def update(self):
         self.image = setup.TMX[self.tileType]
+        pass
         
     def draw(self, surface):
-        surface.blit(self.image, self.rect+64)
-        
-        if self.hasCrop:
-            surface.blit(self.crop.image, self.crop.rect)
-        
+        pass
+
         
 class World(object):
     def __init__(self,viewport):
@@ -169,14 +228,14 @@ class World(object):
     def worldGenerator(self):
         print("Create tilemap")
         self.tilemap = [[Tile(w,h,'Grass') for w in range(self.mapWidth)] for h in range(self.mapHeight)]
-        self.obstacles = pg.sprite.Group([Block((64*5,64*8)), Block((64*9,64*6)), Block((64*3,64*1))])
         
-        for h in range(self.mapHeight):
-            for w in range(self.mapWidth):
-                if random.randint(1,100)<15 :
-                    self.tilemap[h][w]= Tile(w,h,'Water')
-                if random.randint(1,100)<15 :
-                    self.tilemap[h][w]= Tile(w,h,'Stone')
+        obstacles = [Block((64*w,0)) for w in range(self.mapWidth)]
+        obstacles.append([Block((64*w,(self.mapHeight-1)*self.tileSize)) for w in range(self.mapWidth)])
+        obstacles.append([Block((0,64*h)) for h in range(self.mapHeight)])
+        obstacles.append([Block(((self.mapWidth-1)*self.tileSize,64*h)) for h in range(self.mapHeight)])
+        self.obstacles = pg.sprite.Group(obstacles)
+        self.tiles = pg.sprite.Group(self.tilemap)
+        
 
 
 class Control(object):
@@ -186,46 +245,56 @@ class Control(object):
         self.clock = pg.time.Clock()
         self.done = False
         self.keys=pg.key.get_pressed()
-        
+        self.printtimer = 0
 
        
         self.player = Player((400,400))
         self.viewport = self.screen.get_rect()
-        self.level = pg.Surface((5000,5000)).convert()
+        self.level = pg.Surface((c.mapWidth*c.tileSize,c.mapHeight*c.tileSize)).convert()
         self.level_rect = self.level.get_rect()
 
         
     def event_loop(self):
-        for event in pg.event.get():
-            self.keys = pg.key.get_pressed()
-            if event.type == pg.QUIT or self.keys[pg.K_ESCAPE]:
-                self.done = True
-            elif event.type == pg.KEYDOWN:
-                self.player.add_direction(event.key)
-            elif event.type == pg.KEYUP:
-                self.player.pop_direction(event.key)
+        inputcontroller.playerInput(self)
+
                 
     def update(self,deltatime):
+        
         self.player.update(self.world.obstacles, deltatime)
+        spell_sprites.update(deltatime)
+        character_sprites.update(deltatime)
         self.update_viewport()
+        
+        self.printtimer +=deltatime
+        if self.printtimer>1:
+            print(character_sprites)
+            self.printtimer=0
+            renderedSprites =0
         
     def update_viewport(self):
         self.viewport.center = self.player.rect.center
         self.viewport.clamp_ip(self.level_rect)
         
+    def healthbars(self, screen):
+        for enemy in character_sprites:
+            length = 64*(enemy.healthCurrent/enemy.healthMax)
+            pg.draw.rect(screen, c.red, (enemy.rect.x,enemy.rect.y-15,length,10))
+        
     def draw(self):
-        # self.level.fill(pg.Color("lightblue"))
-        tile_sprites.draw(self.level)
+        self.world.tiles.draw(self.level)
         self.world.obstacles.draw(self.level)
+        spell_sprites.draw(self.level)
+        character_sprites.draw(self.level)
         self.player.draw(self.level)
+        self.healthbars(self.level)
         self.screen.blit(self.level, (0,0), self.viewport)
+        
         pg.display.update()
-
+        
     def display_fps(self):
         """Show the program's FPS in the window handle."""
         caption = "{} - FPS: {:.2f}".format("Test Pygame", int(self.clock.get_fps()))
         pg.display.set_caption(caption)
-        
   
     def main(self):
 
@@ -234,7 +303,7 @@ class Control(object):
 
         print("Starting main loop")
         while not self.done:
-            self.deltatime = self.clock.tick(60)/1000
+            self.deltatime = self.clock.tick()/1000
             self.event_loop()
             self.update(self.deltatime)
             self.draw()
