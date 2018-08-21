@@ -36,7 +36,7 @@ class Player(pg.sprite.Sprite):
         self.direction_stack = []  #Held keys in the order they were pressed.
         self.redraw = False  #Force redraw if needed.
         
-        self.moveSpeed = 500
+        self.movespeed = 500
         # self.inventory = Inventory()
         self.healthCurrent = 100
         self.healthMax = 100
@@ -92,7 +92,7 @@ class Player(pg.sprite.Sprite):
             vector[0] += DIRECT_DICT[key][0]
             vector[1] += DIRECT_DICT[key][1]
         factor = (ANGLE_UNIT_SPEED if all(vector) else 1)
-        frame_speed = self.moveSpeed*factor*deltatime
+        frame_speed = self.movespeed*factor*deltatime
         self.remainder[0] += vector[0]*frame_speed
         self.remainder[1] += vector[1]*frame_speed
         vector[0], self.remainder[0] = divfmod(self.remainder[0], 1)
@@ -122,33 +122,57 @@ class Enemy(pg.sprite.Sprite):
         self.rect.x = location[0]
         self.rect.y = location[1]
         
+        self.true_pos = list(self.rect.center)
+        self.remainder = [0, 0]  #Adjust rect in integers; save remainders.
+
+        self.old_direction = None  #The Players previous direction every frame.
+        self.direction_stack = []  #Held keys in the order they were pressed.
+        self.redraw = False  #Force redraw if needed.
+        
         self.healthCurrent = 100
         self.healthMax = 100
         self.healthRegen = 1
-        self.movespeed = 5
+        self.movespeed = random.randint(0,200)
         self.target = player
 
     def set_target(self, target):
         self.target = target
         
-    def update(self, dt):
+    def update(self, obstacles, dt):
         if self.healthCurrent <= 0:
             self.kill()
             
-        if self.target.rect.x < self.rect.x:
-            self.rect.x -= self.movespeed*dt
-        else:
-            self.rect.x += self.movespeed*dt
-        # if self.target.rect.x < self.rect.x:
-        #     self.rect.x -= self.movespeed*dt
-          
-        # if self.target.rect.y >= self.rect.y:
-        #     self.rect.y += self.movespeed*dt
-        # else:
-        #     self.rect.y += self.movespeed*dt*-1
+        if self.target:
+            if not self.rect == self.target:    
+                vector = [0, 0]
+                if (self.rect.x-self.target.rect.x)>0:
+                    vector[0] = -1
+                if (self.rect.x-self.target.rect.x)<0:
+                    vector[0] = 1
+                if (self.rect.y-self.target.rect.y)>0:
+                    vector[1] = -1
+                if (self.rect.y-self.target.rect.y)<0:
+                    vector[1] = 1
+                factor = (ANGLE_UNIT_SPEED if all(vector) else 1)
+                frame_speed = self.movespeed*factor*dt
+                self.remainder[0] += vector[0]*frame_speed
+                self.remainder[1] += vector[1]*frame_speed
+                vector[0], self.remainder[0] = divfmod(self.remainder[0], 1)
+                vector[1], self.remainder[1] = divfmod(self.remainder[1], 1)
+                if vector != [0, 0]:
+                    self.movement(obstacles, vector[0], 0)
+                    self.movement(obstacles, vector[1], 1)
+                
+    def movement(self, obstacles, offset, i):
+        """Move player and then check for collisions; adjust as necessary."""
+        self.rect[i] += offset
+        collisions = pg.sprite.spritecollide(self, obstacles, False)
+        callback = pg.sprite.collide_mask
+        while pg.sprite.spritecollideany(self, collisions, callback):
+            self.rect[i] += (1 if offset<0 else -1)
+            self.remainder[i] = 0
         
     def draw(self, surface):
-        
         surface.blit(self.image, self.rect) 
         
 class Spell(pg.sprite.Sprite):
@@ -290,7 +314,7 @@ class Control(object):
         t = time.time()
         self.player.update(self.world.obstacles, deltatime)
         spell_sprites.update(deltatime)
-        character_sprites.update(deltatime)
+        character_sprites.update(self.world.obstacles, deltatime)
         self.update_viewport()
         
         self.logictimer +=deltatime
