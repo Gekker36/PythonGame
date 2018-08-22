@@ -52,10 +52,14 @@ def playerInput(control):
                 mousePos = pg.mouse.get_pos()
                 worldPos = mousePos[0]+control.viewport[0],mousePos[1]+control.viewport[1]
                 m.Enemy(worldPos,control.player)
-
-            #     
-            # if(event.key == pg.K_3):
-            #     gameControl.player.createChest()
+                
+            if(event.key == pg.K_3):
+                mousePos = pg.mouse.get_pos()
+                worldPos = mousePos[0]+control.viewport[0],mousePos[1]+control.viewport[1]
+                control.world.generate_resource(worldPos)
+                
+            if(event.key == pg.K_e):
+                control.player.working = True
             #     
             # if(event.key == pg.K_4):
             #     print(gameControl.player.inventory.items) 
@@ -73,7 +77,8 @@ def playerInput(control):
             if(event.key == pg.K_RIGHT) or (event.key == pg.K_LEFT) or (event.key == pg.K_DOWN) or (event.key == pg.K_UP):
                 control.player.pop_direction(event.key)
                     
-
+            if(event.key == pg.K_e):
+                control.player.working = False
 
              
         

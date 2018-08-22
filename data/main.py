@@ -8,11 +8,11 @@ import math
 import time
 
 
-# crop_sprites = pg.sprite.Group()
+
 character_sprites = pg.sprite.Group()
-# object_sprites = pg.sprite.Group()
+resource_sprites = pg.sprite.Group()
 spell_sprites = pg.sprite.Group()
-# icon_sprites = pg.sprite.Group()
+
 
 
 ANGLE_UNIT_SPEED = math.sqrt(2)/2
@@ -47,6 +47,7 @@ class Player(pg.sprite.Sprite):
         
         self.level = 1
         self.experience = 0
+        self.working = False
         
         
         self.equipped = {"Head":[], "Body":[], "Weapon":[], "Shield":[]}
@@ -100,6 +101,17 @@ class Player(pg.sprite.Sprite):
         if vector != [0, 0]:
             self.movement(obstacles, vector[0], 0)
             self.movement(obstacles, vector[1], 1)
+            
+        hit = pg.sprite.spritecollide(self, resource_sprites,False)
+        
+        if hit:
+            if self.working:
+                hit[0].worked=True
+            else:
+                hit[0].worked = False
+
+        
+        
             
     def movement(self, obstacles, offset, i):
         """Move player and then check for collisions; adjust as necessary."""
@@ -226,7 +238,29 @@ class Block(pg.sprite.Sprite):
         self.image = setup.GFX['stone_block'].convert()
         self.rect = self.image.get_rect(topleft = location)
         self.mask = pg.mask.from_surface(self.image)
+        
+class Resource(pg.sprite.Sprite):
+    def __init__(self, location):
+        pg.sprite.Sprite.__init__(self,resource_sprites)
+        self.image = setup.GFX['Deposit'].convert()
+        self.image.set_colorkey((255,255,255))
+        self.rect = self.image.get_rect()
+        self.mask = pg.mask.from_surface(self.image)
+        self.rect.x = location[0]
+        self.rect.y = location[1]
+        self.jobTime = 2
+        self.jobTimer = 0
+        self.worked = False
 
+        
+    def update(self, dt):
+        if self.worked:
+            self.jobTimer += dt
+            if self.jobTimer>= self.jobTime:
+                self.kill()
+        
+    def draw(self, surface):
+        surface.blit(self.image, self.rect)
         
 class Tile(object):
     def __init__(self,x,y,tileType):
@@ -264,6 +298,7 @@ class World(object):
         self.mapWidth = c.mapWidth
         self.tileSize = c.tileSize
         self.worldGenerator()
+        self.resources = []
 
     
     def worldGenerator(self):
@@ -280,13 +315,19 @@ class World(object):
         obstacles.append([Block((0,64*h)) for h in range(self.mapHeight)])
         obstacles.append([Block(((self.mapWidth-1)*self.tileSize,64*h)) for h in range(self.mapHeight)])
         self.obstacles = pg.sprite.Group(obstacles)
-
+        
+    def generate_resource(self,location):
+        self.resources.append(Resource(location))
+    
     def update(dt):
         pass
         
     def draw(self, surface):
         for tile in self.tilemap:
             tile.draw(surface)
+        # for resource in self.resources:
+        #     resource.draw(surface)
+            
 
 
 class Control(object):
@@ -315,6 +356,7 @@ class Control(object):
         self.player.update(self.world.obstacles, deltatime)
         spell_sprites.update(deltatime)
         character_sprites.update(self.world.obstacles, deltatime)
+        resource_sprites.update(deltatime)
         self.update_viewport()
         
         self.logictimer +=deltatime
@@ -330,15 +372,23 @@ class Control(object):
         for enemy in character_sprites:
             length = 64*(enemy.healthCurrent/enemy.healthMax)
             pg.draw.rect(screen, c.red, (enemy.rect.x,enemy.rect.y-15,length,10))
-        
+            
+    def workbars(self, screen):
+        for resource in resource_sprites:
+            if resource.jobTimer !=0:
+                length = 64*(resource.jobTimer/resource.jobTime)
+                pg.draw.rect(screen, c.blue, (resource.rect.x,resource.rect.y-15,length,10))
+                    
     def draw(self, deltatime):
         t = time.time()
         self.world.draw(self.level)
         self.world.obstacles.draw(self.level)
         spell_sprites.draw(self.level)
         character_sprites.draw(self.level)
+        resource_sprites.draw(self.level)
         self.player.draw(self.level)
         self.healthbars(self.level)
+        self.workbars(self.level)
         self.screen.blit(self.level, (0,0), self.viewport)
         pg.display.update()
         
