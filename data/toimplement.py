@@ -1,25 +1,3 @@
-class Enemy(pg.sprite.Sprite):
-#     def __init__(self):
-#         pg.sprite.Sprite.__init__(self,character_sprites)
-#         self.image = setup.GFX['Enemy']
-#         self.image.set_colorkey((255,255,255))
-#         self.rect = self.image.get_rect()
-#         self.rect.x = 64*8
-#         self.rect.y = (64*8)
-#         
-#         self.healthCurrent = 100
-#         self.healthMax = 100
-#         self.healthRegen = 1
-#         
-#     def update(self, deltatime):
-#         if self.healthCurrent <= 0:
-#             self.kill()
-#         
-#     def draw(self, surface):
-#         surface.blit(self.image, self.rect)
-# 
-# 
-#         
 # class Item(object):
 #     def __init__(self):
 #         self.image = setup.GFX['Sword_icon']
@@ -63,62 +41,8 @@ class Enemy(pg.sprite.Sprite):
 #     def draw (self, surface):
 #         surface.blit(self.image, self.rect)
 #         
-#         
-# class Spell(pg.sprite.Sprite):
-#     def __init__(self, player):
-#         self.manaCost = 10
-#         if player.manaCurrent >= self.manaCost:
-#             pg.sprite.Sprite.__init__(self,spell_sprites)
-#             self.image = setup.GFX['Orb of Flame']
-#             self.rect = self.image.get_rect()
-#             self.rect.x = player.rect.x
-#             self.rect.y = player.rect.y
-#             self.image.set_colorkey((0,0,0))
-#             self.direction = player.direction
-#             self.speed = 4
-#             self.caster = player
-#             player.manaCurrent -= self.manaCost
-#             
-#     def update(self, deltatime):
-#         
-#         if self.direction == 0:
-#             self.rect.y -= self.speed
-#         if self.direction == 1:
-#             self.rect.x += self.speed
-#         if self.direction == 2:
-#             self.rect.y += self.speed
-#         if self.direction == 3:
-#             self.rect.x -= self.speed
-#             
-#         hit = pg.sprite.spritecollide(self, character_sprites,False)
-#         
-#         if hit:
-#             if hit[0] != self.caster:
-#                 hit[0].healthCurrent -= 25
-#                 if hit[0].healthCurrent <=0:
-#                     self.caster.gainExperience(10)
-#                 
-#                 self.kill()
-#             
-#         if self.rect.x >= c.mapWidth*c.tileSize or self.rect.x <= -c.tileSize or self.rect.y >= c.mapHeight*c.tileSize or self.rect.y <= -c.tileSize:
-#             self.kill()
-#        
-#     def draw(self, surface):
-#         surface.blit(self.image, self.rect)
         
-# class Job(object):
-#     def __init__(self,tile):
-#         self.time = 1
-#     
-# class JobQueue(object):
-#     def __init(self):
-#         self.jobs = []
-#         
-#     def add_job(self, job):
-#         self.jobs.append(job)
-#             
-#     def remove_job(self, job):
-#         self.jobs.remove(job)
+# 
 #         
 # class Crop(pg.sprite.Sprite):        
 #     def __init__(self,tile):

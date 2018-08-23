@@ -106,9 +106,7 @@ class Player(pg.sprite.Sprite):
         
         if hit:
             if self.working:
-                hit[0].worked=True
-            else:
-                hit[0].worked = False
+                hit[0].add_work()
 
         
         
@@ -126,7 +124,7 @@ class Player(pg.sprite.Sprite):
         surface.blit(self.image, self.rect)
         
 class Enemy(pg.sprite.Sprite):
-    def __init__(self, location,player):
+    def __init__(self, location,world):
         pg.sprite.Sprite.__init__(self,character_sprites)
         self.image = setup.GFX['Enemy'].convert()
         self.image.set_colorkey((255,255,255))
@@ -144,8 +142,9 @@ class Enemy(pg.sprite.Sprite):
         self.healthCurrent = 100
         self.healthMax = 100
         self.healthRegen = 1
-        self.movespeed = random.randint(0,200)
-        self.target = player
+        self.movespeed = 300 #random.randint(0,200)
+        self.world = world
+        self.target = None
 
     def set_target(self, target):
         self.target = target
@@ -153,27 +152,35 @@ class Enemy(pg.sprite.Sprite):
     def update(self, obstacles, dt):
         if self.healthCurrent <= 0:
             self.kill()
+        
+        if not self.target and self.world.jobQueue.jobs:
+            job = self.world.jobQueue.jobs[0]
+            self.target = job.job
+            self.world.jobQueue.remove_job(job)
             
         if self.target:
             if not self.rect == self.target:    
                 vector = [0, 0]
-                if (self.rect.x-self.target.rect.x)>0:
-                    vector[0] = -1
-                if (self.rect.x-self.target.rect.x)<0:
-                    vector[0] = 1
-                if (self.rect.y-self.target.rect.y)>0:
-                    vector[1] = -1
-                if (self.rect.y-self.target.rect.y)<0:
-                    vector[1] = 1
-                factor = (ANGLE_UNIT_SPEED if all(vector) else 1)
-                frame_speed = self.movespeed*factor*dt
-                self.remainder[0] += vector[0]*frame_speed
-                self.remainder[1] += vector[1]*frame_speed
-                vector[0], self.remainder[0] = divfmod(self.remainder[0], 1)
-                vector[1], self.remainder[1] = divfmod(self.remainder[1], 1)
+                
+                posDif = [self.target.rect.x-self.rect.x, self.target.rect.y-self.rect.y]
+                dist = min(self.movespeed*dt, math.sqrt((posDif[0]**2)+(posDif[1]**2)))
+                totAngle = abs(posDif[0])+abs(posDif[1])
+                vector = [dist*posDif[0]/totAngle,dist*posDif[1]/totAngle]
+                
+
+                print(totAngle)
+                # print([posDif[0]/totAngle,posDif[1]/totAngle])
+                
                 if vector != [0, 0]:
-                    self.movement(obstacles, vector[0], 0)
-                    self.movement(obstacles, vector[1], 1)
+                    self.rect[0] += vector[0]
+                    self.rect[1] += vector[1]
+                    
+        hit = pg.sprite.spritecollide(self, resource_sprites,False)
+        
+        if hit and hit[0] == self.target:
+            hit[0].add_work(dt)
+            if hit[0].jobTimer >= hit[0].jobTime:
+                self.target = None
                 
     def movement(self, obstacles, offset, i):
         """Move player and then check for collisions; adjust as necessary."""
@@ -229,6 +236,23 @@ class Spell(pg.sprite.Sprite):
     def draw(self, surface):
         surface.blit(self.image, self.rect)  
         
+class Job(object):
+    def __init__(self,job):
+        self.job = job
+        
+    
+        
+    
+class JobQueue(object):
+    def __init__(self):
+        self.jobs = []
+        
+    def add_job(self, job):
+        self.jobs.append(job)
+            
+    def remove_job(self, job):
+        self.jobs.remove(job)
+        
           
 class Block(pg.sprite.Sprite):
     """Something to run head-first into."""
@@ -251,11 +275,15 @@ class Resource(pg.sprite.Sprite):
         self.jobTime = 2
         self.jobTimer = 0
         self.worked = False
+    
+    def add_work(self, dt):
+        self.worked=True
+        self.jobTimer +=dt
 
         
     def update(self, dt):
         if self.worked:
-            self.jobTimer += dt
+            self.worked = False
             if self.jobTimer>= self.jobTime:
                 self.kill()
         
@@ -299,6 +327,7 @@ class World(object):
         self.tileSize = c.tileSize
         self.worldGenerator()
         self.resources = []
+        self.jobQueue = JobQueue()
 
     
     def worldGenerator(self):
@@ -317,14 +346,21 @@ class World(object):
         self.obstacles = pg.sprite.Group(obstacles)
         
     def generate_resource(self,location):
-        self.resources.append(Resource(location))
+        resource = Resource(location)
+        self.resources.append(resource)
+        job = Job(resource)
+        self.jobQueue.add_job(job)
+        print(self.jobQueue.jobs)
     
     def update(dt):
         pass
         
-    def draw(self, surface):
+    def draw(self, surface,surface_rect):
+        
+    
         for tile in self.tilemap:
-            tile.draw(surface)
+            if surface_rect.contains(tile.rect):
+                tile.draw(surface)
         # for resource in self.resources:
         #     resource.draw(surface)
             
@@ -355,13 +391,14 @@ class Control(object):
         t = time.time()
         self.player.update(self.world.obstacles, deltatime)
         spell_sprites.update(deltatime)
-        character_sprites.update(self.world.obstacles, deltatime)
         resource_sprites.update(deltatime)
+        character_sprites.update(self.world.obstacles, deltatime)
+        
         self.update_viewport()
         
         self.logictimer +=deltatime
         if self.logictimer>1:
-            print(str('logictimer: ') + str(time.time()-t))
+            # print(str('logictimer: ') + str(time.time()-t))
             self.logictimer=0
         
     def update_viewport(self):
@@ -381,11 +418,11 @@ class Control(object):
                     
     def draw(self, deltatime):
         t = time.time()
-        self.world.draw(self.level)
+        self.world.draw(self.level, self.level_rect)
         self.world.obstacles.draw(self.level)
         spell_sprites.draw(self.level)
-        character_sprites.draw(self.level)
         resource_sprites.draw(self.level)
+        character_sprites.draw(self.level)
         self.player.draw(self.level)
         self.healthbars(self.level)
         self.workbars(self.level)
