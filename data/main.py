@@ -20,7 +20,7 @@ DIRECT_DICT = {pg.K_LEFT  : (-1, 0),
                pg.K_RIGHT : ( 1, 0),
                pg.K_UP    : ( 0,-1),
                pg.K_DOWN  : ( 0, 1)}
-
+               
 
 class Player(pg.sprite.Sprite):
     def __init__(self, location, direction=pg.K_RIGHT):
@@ -29,22 +29,21 @@ class Player(pg.sprite.Sprite):
         self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect(topleft = location)
 
-        self.true_pos = list(self.rect.center)
         self.remainder = [0, 0]  #Adjust rect in integers; save remainders.
         self.direction = direction
         self.old_direction = None  #The Players previous direction every frame.
         self.direction_stack = []  #Held keys in the order they were pressed.
         self.redraw = False  #Force redraw if needed.
         
-        self.movespeed = 500
-        # self.inventory = Inventory()
+        
+        self.inventory = Inventory()
         self.healthCurrent = 100
         self.healthMax = 100
         self.healthRegen = 1
         self.manaCurrent = 50
         self.manaMax = 100
         self.manaRegen = 10
-        
+        self.movespeed = 500
         self.level = 1
         self.experience = 0
         self.working = False
@@ -168,7 +167,7 @@ class Enemy(pg.sprite.Sprite):
                 vector = [dist*posDif[0]/totAngle,dist*posDif[1]/totAngle]
                 
 
-                print(totAngle)
+                # print(totAngle)
                 # print([posDif[0]/totAngle,posDif[1]/totAngle])
                 
                 if vector != [0, 0]:
@@ -236,11 +235,26 @@ class Spell(pg.sprite.Sprite):
     def draw(self, surface):
         surface.blit(self.image, self.rect)  
         
+        
+class Inventory(object):
+    def __init__(self):
+        self.size = 10
+        self.items=[]
+
+        
+    def add_item(self, item):
+        if len(self.items)<self.size:
+            self.items.append(item)
+        else:
+            print("Inventory is full")
+            
+    def remove_item(self, item):
+        self.items.remove(item)
+        
+        
 class Job(object):
     def __init__(self,job):
         self.job = job
-        
-    
         
     
 class JobQueue(object):
@@ -264,14 +278,14 @@ class Block(pg.sprite.Sprite):
         self.mask = pg.mask.from_surface(self.image)
         
 class Resource(pg.sprite.Sprite):
-    def __init__(self, location):
+    def __init__(self, currentTile):
         pg.sprite.Sprite.__init__(self,resource_sprites)
         self.image = setup.GFX['Deposit'].convert()
         self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect()
         self.mask = pg.mask.from_surface(self.image)
-        self.rect.x = location[0]
-        self.rect.y = location[1]
+        self.rect.x = currentTile.rect.x
+        self.rect.y = currentTile.rect.y
         self.jobTime = 2
         self.jobTimer = 0
         self.worked = False
@@ -304,7 +318,7 @@ class Tile(object):
         self.crop =[]
 
     def plant_crop(self, crop):
-        print("Planting crop")
+        # print("Planting crop")
         self.crop= crop
         self.hasCrop = True
         
@@ -334,10 +348,13 @@ class World(object):
         print("Create tilemap")
         
         self.tilemap=[]
+        self.tilemap_rect=[]
         
         for h in range(self.mapHeight):
             for w in range(self.mapWidth):
-                self.tilemap.append(Tile(w,h,'Grass'))
+                tile = Tile(w,h,'Grass2')
+                self.tilemap.append(tile)
+                self.tilemap_rect.append(tile.rect)
         
         obstacles = [Block((64*w,0)) for w in range(self.mapWidth)]
         obstacles.append([Block((64*w,(self.mapHeight-1)*self.tileSize)) for w in range(self.mapWidth)])
@@ -350,19 +367,17 @@ class World(object):
         self.resources.append(resource)
         job = Job(resource)
         self.jobQueue.add_job(job)
-        print(self.jobQueue.jobs)
+        # print(self.jobQueue.jobs)
     
     def update(dt):
         pass
         
-    def draw(self, surface,surface_rect):
+    def draw(self, surface,viewport):
         
-    
         for tile in self.tilemap:
-            if surface_rect.contains(tile.rect):
+            if viewport.colliderect(tile.rect):
                 tile.draw(surface)
-        # for resource in self.resources:
-        #     resource.draw(surface)
+
             
 
 
@@ -407,8 +422,9 @@ class Control(object):
         
     def healthbars(self, screen):
         for enemy in character_sprites:
-            length = 64*(enemy.healthCurrent/enemy.healthMax)
-            pg.draw.rect(screen, c.red, (enemy.rect.x,enemy.rect.y-15,length,10))
+            if enemy.healthCurrent < enemy.healthMax:
+                length = 64*(enemy.healthCurrent/enemy.healthMax)
+                pg.draw.rect(screen, c.red, (enemy.rect.x,enemy.rect.y-15,length,10))
             
     def workbars(self, screen):
         for resource in resource_sprites:
@@ -418,7 +434,7 @@ class Control(object):
                     
     def draw(self, deltatime):
         t = time.time()
-        self.world.draw(self.level, self.level_rect)
+        self.world.draw(self.level, self.viewport)
         self.world.obstacles.draw(self.level)
         spell_sprites.draw(self.level)
         resource_sprites.draw(self.level)

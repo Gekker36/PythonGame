@@ -54,9 +54,12 @@ def playerInput(control):
                 m.Enemy(worldPos,control.world)
                 
             if(event.key == pg.K_3):
-                mousePos = pg.mouse.get_pos()
-                worldPos = mousePos[0]+control.viewport[0],mousePos[1]+control.viewport[1]
-                control.world.generate_resource(worldPos)
+                mousePos= pg.mouse.get_pos()
+                worldPos = [mousePos[0]+control.viewport.x, mousePos[1]+control.viewport.y]
+                
+                mouseColliders = [s for s in control.world.tilemap if s.rect.collidepoint(worldPos)]
+                currentTile = mouseColliders[0]
+                control.world.generate_resource(currentTile)
                 
             if(event.key == pg.K_e):
                 control.player.working = True
