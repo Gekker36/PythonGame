@@ -1,48 +1,4 @@
-# class Item(object):
-#     def __init__(self):
-#         self.image = setup.GFX['Sword_icon']
-#         self.name = "Sword"
-#         self.type = "Weapon"
-#         self.isStackable = False
-#         self.price = 100
-#         self.amount = 1
-#         
-#         
-# class Inventory(object):
-#     def __init__(self):
-#         self.size = 10
-#         self.items=[]
-# 
-#         
-#     def add_item(self, item):
-#         if len(self.items)<self.size:
-#             self.items.append(item)
-#         else:
-#             print("Inventory is full")
-#             
-#     def remove_item(self, item):
-#         self.items.remove(item)
-#         
-#         
-# class Chest(pg.sprite.Sprite):
-#     def __init__(self, player):
-#         pg.sprite.Sprite.__init__(self,object_sprites)
-#         self.inventory = Inventory()
-#         self.image = setup.GFX["Chest Closed"]
-#         self.rect = self.image.get_rect()
-#         self.rect.x = player.currentTile[1]*64
-#         self.rect.y = player.currentTile[0]*64
-#         self.isOpen = False
-#         
-#         
-#     def update(self):
-#         pass
-#         
-#     def draw (self, surface):
-#         surface.blit(self.image, self.rect)
-#         
-        
-# 
+
 #         
 # class Crop(pg.sprite.Sprite):        
 #     def __init__(self,tile):

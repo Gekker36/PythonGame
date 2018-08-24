@@ -61,11 +61,18 @@ def playerInput(control):
                 currentTile = mouseColliders[0]
                 control.world.generate_resource(currentTile)
                 
+            if(event.key == pg.K_4):
+                mousePos= pg.mouse.get_pos()
+                worldPos = [mousePos[0]+control.viewport.x, mousePos[1]+control.viewport.y]
+                
+                mouseColliders = [s for s in control.world.tilemap if s.rect.collidepoint(worldPos)]
+                currentTile = mouseColliders[0]
+                control.world.create_chest(currentTile)
+                
             if(event.key == pg.K_e):
                 control.player.working = True
             #     
-            # if(event.key == pg.K_4):
-            #     print(gameControl.player.inventory.items) 
+            #  
             #     
             # if(event.key == pg.K_5):
             #     m.Enemy()
