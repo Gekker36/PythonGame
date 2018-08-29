@@ -26,7 +26,7 @@ DIRECT_DICT = {pg.K_LEFT  : (-1, 0),
 class Player(pg.sprite.Sprite):
     def __init__(self, location, world, direction=pg.K_RIGHT):
         # pg.sprite.Sprite.__init__(self,character_sprites)
-        self.image = setup.GFX['Character'].convert()
+        self.image = setup.GFX['Character2'].convert()
         self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect(topleft = location)
 
@@ -170,11 +170,7 @@ class Enemy(pg.sprite.Sprite):
                 dist = min(self.movespeed*dt, math.sqrt((posDif[0]**2)+(posDif[1]**2)))
                 totAngle = abs(posDif[0])+abs(posDif[1])
                 vector = [dist*posDif[0]/totAngle,dist*posDif[1]/totAngle]
-                
 
-                # print(totAngle)
-                # print([posDif[0]/totAngle,posDif[1]/totAngle])
-                
                 if vector != [0, 0]:
                     self.rect[0] += vector[0]
                     self.rect[1] += vector[1]
@@ -186,7 +182,7 @@ class Enemy(pg.sprite.Sprite):
             if hit[0].jobTimer >= hit[0].jobTime:
                 self.target = None
                 self.inventory.add_item(Item())
-                print(self.inventory.items)
+                print(len(self.inventory.items))
                 
     def movement(self, obstacles, offset, i):
         """Move player and then check for collisions; adjust as necessary."""
@@ -372,6 +368,7 @@ class World(object):
         self.tileSize = c.tileSize
         self.worldGenerator()
         self.resources = []
+        self.chests = []
         self.jobQueue = JobQueue()
 
     
@@ -402,6 +399,8 @@ class World(object):
     
     def create_chest(self, location):
         chest = Chest(location)
+        self.chests.append(chest)
+
         
     
     def update(dt):
