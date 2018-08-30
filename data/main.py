@@ -2,6 +2,7 @@ from data.states import  level #, death, shop, levels, battle,
 # from data.states import credits
 from . import setup, tools, inputcontroller
 from . import constants as c
+from . import NPCstates
 import pygame as pg
 import random
 import math
@@ -25,11 +26,12 @@ DIRECT_DICT = {pg.K_LEFT  : (-1, 0),
 
 class Player(pg.sprite.Sprite):
     def __init__(self, location, world, direction=pg.K_RIGHT):
-        # pg.sprite.Sprite.__init__(self,character_sprites)
+        pg.sprite.Sprite.__init__(self,character_sprites)
         self.image = setup.GFX['Character2'].convert()
         self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect(topleft = location)
 
+        self.true_pos = list(self.rect.center)
         self.remainder = [0, 0]  #Adjust rect in integers; save remainders.
         self.direction = direction
         self.old_direction = None  #The Players previous direction every frame.
@@ -47,6 +49,7 @@ class Player(pg.sprite.Sprite):
         self.level = 1
         self.experience = 0
         self.working = False
+        self.faith = 100
         
         
         self.equipped = {"Head":[], "Body":[], "Weapon":[], "Shield":[]}
@@ -59,15 +62,7 @@ class Player(pg.sprite.Sprite):
     def castFireball(self):
         print("Casting Fireball")
         Spell(self)
-    # 
-    # def createChest(self):
-    #     print("Creating Chest")
-    #     Chest(self)
-    #   
-    # def createItem(self):
-    #     self.inventory.add_item(Item())
-    #     
-   
+
             
     def add_direction(self, key):
         """Add a pressed direction key on the direction stack."""
@@ -100,7 +95,8 @@ class Player(pg.sprite.Sprite):
         if vector != [0, 0]:
             self.movement(obstacles, vector[0], 0)
             self.movement(obstacles, vector[1], 1)
-            
+        self.true_pos = list(self.rect.center)
+        
         hit = pg.sprite.spritecollide(self, resource_sprites,False)
         
         if hit:
@@ -110,6 +106,7 @@ class Player(pg.sprite.Sprite):
                     self.world.jobQueue.remove_job(hit[0])
                     self.inventory.add_item(Item())
                     print(self.inventory.items)
+        
 
         
         
@@ -135,12 +132,16 @@ class Enemy(pg.sprite.Sprite):
         self.rect.x = location[0]
         self.rect.y = location[1]
         
+        self.sight_range = 500
+        self.sight_rect = pg.Rect(-self.sight_range/2+self.rect.x,
+                                -self.sight_range/2+self.rect.y, 
+                                self.sight_range, 
+                                self.sight_range)
+        
         self.true_pos = list(self.rect.center)
         self.remainder = [0, 0]  #Adjust rect in integers; save remainders.
-
-        self.old_direction = None  #The Players previous direction every frame.
-        self.direction_stack = []  #Held keys in the order they were pressed.
-        self.redraw = False  #Force redraw if needed.
+        self.FSM = NPCstates.FSM(self)
+        self.FSM.setState("Idle")
         
         self.inventory = Inventory()
         self.healthCurrent = 100
@@ -175,7 +176,8 @@ class Enemy(pg.sprite.Sprite):
                     self.rect[0] += vector[0]
                     self.rect[1] += vector[1]
                     
-        hit = pg.sprite.spritecollide(self, resource_sprites,False)
+        self.true_pos = list(self.rect.center)          
+        hit = pg.sprite.spritecollide(self, resource_sprites, False)
         
         if hit and hit[0] == self.target:
             hit[0].add_work(dt)
@@ -183,6 +185,12 @@ class Enemy(pg.sprite.Sprite):
                 self.target = None
                 self.inventory.add_item(Item())
                 print(len(self.inventory.items))
+                
+        for character in self.world.characters:
+            dist = math.sqrt((character.true_pos[0] - self.true_pos[0])**2 + (character.true_pos[1] - self.true_pos[1])**2)
+
+
+        self.FSM.execute()
                 
     def movement(self, obstacles, offset, i):
         """Move player and then check for collisions; adjust as necessary."""
@@ -194,6 +202,7 @@ class Enemy(pg.sprite.Sprite):
             self.remainder[i] = 0
         
     def draw(self, surface):
+        pg.draw.rect(surface, c.blue, self.sight_rect)
         surface.blit(self.image, self.rect) 
         
 class Spell(pg.sprite.Sprite):
@@ -334,7 +343,7 @@ class Resource(pg.sprite.Sprite):
 class Tile(object):
     def __init__(self,x,y,tileType):
         self.tileType = tileType
-        self.image = setup.TMX[tileType].convert_alpha()
+        self.image = setup.TMX[self.tileType].convert_alpha()
         self.rect = self.image.get_rect()
         self.rect.x = x*64
         self.rect.y = y*64
@@ -369,8 +378,11 @@ class World(object):
         self.worldGenerator()
         self.resources = []
         self.chests = []
+        self.characters = []
         self.jobQueue = JobQueue()
-
+        
+        self.player = (Player((400,400), self))
+        self.characters.append(self.player)
     
     def worldGenerator(self):
         print("Create tilemap")
@@ -401,12 +413,19 @@ class World(object):
         chest = Chest(location)
         self.chests.append(chest)
 
-        
+    def change_tileType(self, tile, newTileType):
+        tile.tileType = newTileType
+        tile.image = setup.TMX[tile.tileType].convert_alpha()  
     
     def update(dt):
-        pass
+        for character in self.characters:
+            character.update(self.obstacles, dt)
+
         
-    def draw(self, surface,viewport):
+    def draw(self, surface, viewport):
+        
+        for character in self.characters:
+            character.draw(surface)
         
         for tile in self.tilemap:
             if viewport.colliderect(tile.rect):
@@ -438,7 +457,7 @@ class Control(object):
                 
     def update(self,deltatime):
         t = time.time()
-        self.player.update(self.world.obstacles, deltatime)
+        
         spell_sprites.update(deltatime)
         resource_sprites.update(deltatime)
         character_sprites.update(self.world.obstacles, deltatime)
@@ -451,7 +470,7 @@ class Control(object):
             self.logictimer=0
         
     def update_viewport(self):
-        self.viewport.center = self.player.rect.center
+        self.viewport.center = self.world.player.rect.center
         self.viewport.clamp_ip(self.level_rect)
         
     def healthbars(self, screen):
@@ -475,7 +494,7 @@ class Control(object):
         object_sprites.draw(self.level)
         character_sprites.draw(self.level)
         
-        self.player.draw(self.level)
+ 
         self.healthbars(self.level)
         self.workbars(self.level)
         self.screen.blit(self.level, (0,0), self.viewport)
@@ -496,8 +515,7 @@ class Control(object):
 
         print("Create world")
         self.world = World(self.screen_rect.copy())
-        
-        self.player = Player((400,400),self.world)
+
 
         print("Starting main loop")
         while not self.done:
