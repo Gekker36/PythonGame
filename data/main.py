@@ -164,10 +164,10 @@ class Enemy(pg.sprite.Sprite):
             self.world.jobQueue.remove_job(job)
             
         if self.target:
+            
+            posDif = [self.target.rect.x-self.rect.x, self.target.rect.y-self.rect.y]
             if not self.rect == self.target:    
                 vector = [0, 0]
-                
-                posDif = [self.target.rect.x-self.rect.x, self.target.rect.y-self.rect.y]
                 dist = min(self.movespeed*dt, math.sqrt((posDif[0]**2)+(posDif[1]**2)))
                 totAngle = abs(posDif[0])+abs(posDif[1])
                 vector = [dist*posDif[0]/totAngle,dist*posDif[1]/totAngle]
@@ -175,16 +175,26 @@ class Enemy(pg.sprite.Sprite):
                 if vector != [0, 0]:
                     self.rect[0] += vector[0]
                     self.rect[1] += vector[1]
-                    
-        self.true_pos = list(self.rect.center)          
-        hit = pg.sprite.spritecollide(self, resource_sprites, False)
+            
+            
+            if sum(posDif) <= 10:
+                print('At target')
+                self.target.add_work(dt)
+                if self.target.jobTimer >= self.target.jobTime:
+                    self.target = None
+                    self.inventory.add_item(Item())
+                    print(len(self.inventory.items))
+                
+        # self.true_pos = list(self.rect.center)          
+        # hit = pg.sprite.spritecollide(self, resource_sprites, False)
+        # 
+        # if hit and hit[0] == self.target:
+        #     hit[0].add_work(dt)
+        #     if hit[0].jobTimer >= hit[0].jobTime:
+                
         
-        if hit and hit[0] == self.target:
-            hit[0].add_work(dt)
-            if hit[0].jobTimer >= hit[0].jobTime:
-                self.target = None
-                self.inventory.add_item(Item())
-                print(len(self.inventory.items))
+        
+
                 
         for character in self.world.characters:
             dist = math.sqrt((character.true_pos[0] - self.true_pos[0])**2 + (character.true_pos[1] - self.true_pos[1])**2)
@@ -341,30 +351,35 @@ class Resource(pg.sprite.Sprite):
         surface.blit(self.image, self.rect)
         
 class Tile(object):
-    def __init__(self,x,y,tileType):
+    def __init__(self,world,x,y,tileType):
         self.tileType = tileType
         self.image = setup.TMX[self.tileType].convert_alpha()
         self.rect = self.image.get_rect()
         self.rect.x = x*64
         self.rect.y = y*64
         self.mask = pg.mask.from_surface(self.image)
-        
+        self.world = world
         self.isPassable = True
         self.hasCrop = False
         self.crop =[]
 
     def plant_crop(self, crop):
         # print("Planting crop")
-        self.crop= crop
+        # self.crop= crop
         self.hasCrop = True
+        self.croptTimer=0
         
     def harvest_crop(self):
-        self.crop=[]
+        # self.crop=[]
         self.hasCrop = False
         
-    def update(self):
+    def update(self, dt):
         self.image = setup.TMX[self.tileType]
-        pass
+        
+        if self.hasCrop:
+            self.cropTimer += dt
+        
+        
         
     def draw(self, surface):
         surface.blit(self.image, self.rect)
@@ -379,6 +394,9 @@ class World(object):
         self.resources = []
         self.chests = []
         self.characters = []
+        self.growable = []
+        self.growing = []
+        self.harvestable = []
         self.jobQueue = JobQueue()
         
         self.player = (Player((400,400), self))
@@ -392,7 +410,7 @@ class World(object):
         
         for h in range(self.mapHeight):
             for w in range(self.mapWidth):
-                tile = Tile(w,h,'Grass')
+                tile = Tile(self,w,h,'Grass')
                 self.tilemap.append(tile)
                 self.tilemap_rect.append(tile.rect)
         
@@ -416,6 +434,23 @@ class World(object):
     def change_tileType(self, tile, newTileType):
         tile.tileType = newTileType
         tile.image = setup.TMX[tile.tileType].convert_alpha()  
+        if tile.tileType == 'Dirt':
+            self.growable.append(tile)
+            self.jobQueue.add_job(tile)
+
+    
+    def grow_crop(self, tile):
+        self.growable.removable(tile)
+        self.growing.append(tile)
+        
+    def grown_crop(self, tile):
+        self.growing.removable(tile)
+        self.harvestable.append(tile)
+    
+    def harvest_crop(self, tile):
+        self.harvestable.removable(tile)
+        self.growable.append(tile)
+        
     
     def update(dt):
         for character in self.characters:
@@ -484,6 +519,8 @@ class Control(object):
             if resource.jobTimer !=0:
                 length = 64*(resource.jobTimer/resource.jobTime)
                 pg.draw.rect(screen, c.blue, (resource.rect.x,resource.rect.y-15,length,10))
+                
+
                     
     def draw(self, deltatime):
         t = time.time()
