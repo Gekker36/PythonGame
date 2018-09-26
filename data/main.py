@@ -1,6 +1,6 @@
 from data.states import  level #, death, shop, levels, battle,
 # from data.states import credits
-from . import setup, tools, inputcontroller
+from . import setup, tools, inputcontroller, GUI
 from . import constants as c
 from . import NPCstates
 import pygame as pg
@@ -496,6 +496,7 @@ class Control(object):
         spell_sprites.update(deltatime)
         resource_sprites.update(deltatime)
         character_sprites.update(self.world.obstacles, deltatime)
+        GUI.update()
         
         self.update_viewport()
         
@@ -530,6 +531,7 @@ class Control(object):
         resource_sprites.draw(self.level)
         object_sprites.draw(self.level)
         character_sprites.draw(self.level)
+        GUI.draw()
         
  
         self.healthbars(self.level)
