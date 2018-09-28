@@ -27,7 +27,7 @@ DIRECT_DICT = {pg.K_LEFT  : (-1, 0),
 class Player(pg.sprite.Sprite):
     def __init__(self, location, world, direction=pg.K_RIGHT):
         pg.sprite.Sprite.__init__(self,character_sprites)
-        self.image = setup.GFX['Character2'].convert()
+        self.image = setup.CFX['Character']#.convert()
         self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect(topleft = location)
 

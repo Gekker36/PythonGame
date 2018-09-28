@@ -16,8 +16,10 @@ SCREEN = pg.display.set_mode((800, 800))
 SCREEN_RECT = SCREEN.get_rect()
 
 
-GFX = tools.load_all_gfx(os.path.join('resources', 'graphics'))
-TMX = tools.load_all_gfx(os.path.join('resources', 'tiles'))
+
+CFX = tools.load_all_character(os.path.join('resources','graphics', 'characters'))
+GFX = tools.load_all_gfx(os.path.join('resources', 'graphics', 'default'))
+TMX = tools.load_all_tmx(os.path.join('resources','graphics', 'tiles'))
 
 
 
