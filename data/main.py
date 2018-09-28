@@ -178,7 +178,7 @@ class Enemy(pg.sprite.Sprite):
             
             
             if sum(posDif) <= 10:
-                print('At target')
+                # print('At target')
                 self.target.add_work(dt)
                 if self.target.jobTimer >= self.target.jobTime:
                     self.target = None
@@ -379,8 +379,6 @@ class Tile(object):
         if self.hasCrop:
             self.cropTimer += dt
         
-        
-        
     def draw(self, surface):
         surface.blit(self.image, self.rect)
 
@@ -509,17 +507,7 @@ class Control(object):
         self.viewport.center = self.world.player.rect.center
         self.viewport.clamp_ip(self.level_rect)
         
-    def healthbars(self, screen):
-        for enemy in character_sprites:
-            if enemy.healthCurrent < enemy.healthMax:
-                length = 64*(enemy.healthCurrent/enemy.healthMax)
-                pg.draw.rect(screen, c.red, (enemy.rect.x,enemy.rect.y-15,length,10))
-            
-    def workbars(self, screen):
-        for resource in resource_sprites:
-            if resource.jobTimer !=0:
-                length = 64*(resource.jobTimer/resource.jobTime)
-                pg.draw.rect(screen, c.blue, (resource.rect.x,resource.rect.y-15,length,10))
+
                 
 
                     
@@ -531,11 +519,10 @@ class Control(object):
         resource_sprites.draw(self.level)
         object_sprites.draw(self.level)
         character_sprites.draw(self.level)
-        GUI.draw()
+        GUI.draw(self.level)
         
  
-        self.healthbars(self.level)
-        self.workbars(self.level)
+        
         self.screen.blit(self.level, (0,0), self.viewport)
         pg.display.update()
         
