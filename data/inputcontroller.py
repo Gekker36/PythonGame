@@ -1,6 +1,7 @@
 import pygame as pg
 from . import constants as c
 from . import main as m
+from . import GUI as GUI
 
 def playerInput(control):
     for event in pg.event.get():
@@ -79,7 +80,15 @@ def playerInput(control):
                 
             #Interact
             if(event.key == pg.K_e):
-                control.world.player.working = True   
+                control.world.player.working = True  
+                
+            #Inventory        
+            if(event.key == pg.K_i):
+                control.GUI.openInventory()
+                
+            #Character Screen        
+            if(event.key == pg.K_c):
+                control.GUI.openCharacterScreen()
                 
     
                     

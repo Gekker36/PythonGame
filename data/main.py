@@ -476,9 +476,7 @@ class Control(object):
         self.keys=pg.key.get_pressed()
         self.logictimer = 0
         self.drawtimer = 0
-
-       
-       
+        self.GUI = GUI.GUI()
         self.viewport = self.screen.get_rect()
         self.level = pg.Surface((c.mapWidth*c.tileSize,c.mapHeight*c.tileSize)).convert()
         self.level_rect = self.level.get_rect()
@@ -494,7 +492,7 @@ class Control(object):
         spell_sprites.update(deltatime)
         resource_sprites.update(deltatime)
         character_sprites.update(self.world.obstacles, deltatime)
-        GUI.update()
+        self.GUI.update()
         
         self.update_viewport()
         
@@ -519,7 +517,7 @@ class Control(object):
         resource_sprites.draw(self.level)
         object_sprites.draw(self.level)
         character_sprites.draw(self.level)
-        GUI.draw(self.level)
+        self.GUI.draw(self.level)
         
  
         
