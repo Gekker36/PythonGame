@@ -7,9 +7,12 @@ from . import setup
 
 
 class GUI(object):
-    def __init__(self):
+    def __init__(self, viewport,control):
         self.inventoryOpen = False
         self.charactersheetOpen = False
+        self.viewport = viewport
+        self.control = control
+        self.font = pg.font.SysFont('arial',18)
 
     def draw_healthbars(self, screen):
         for enemy in m.character_sprites:
@@ -22,6 +25,42 @@ class GUI(object):
             if resource.jobTimer !=0:
                 length = 64*(resource.jobTimer/resource.jobTime)
                 pg.draw.rect(screen, c.blue, (resource.rect.x,resource.rect.y-15,length,10))
+                
+                
+    def draw_inventory(self, level):
+        if self.inventoryOpen:
+            pg.draw.rect(level, c.white, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)-300, 200,300))
+            
+            
+            if len(self.control.world.player.inventory.items):
+                position = 0
+                for item in self.control.world.player.inventory.items:
+                    textObj = self.font.render(str(item.name)+'x'+str(item.amount), True, c.black, c.white)
+                    level.blit(textObj, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)+position-300))
+                    position += 20
+            else:                
+                textObj = self.font.render(str('Inventory is empty' ), True, c.black, c.white)
+                level.blit(textObj, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)-300))
+                
+                
+    def draw_charactersheet(self, level):
+        if self.charactersheetOpen:
+            player = self.control.world.player
+            position = 0
+            
+            pg.draw.rect(level, c.white, (self.viewport.x+(self.viewport.width-200), self.viewport.y, 200,400))
+            statlist= ['healthCurrent', 'healthMax', 'manaCurrent', 'manaMax', 'movespeed', 'level', 'experience']
+            
+            for stat in statlist:
+                textObj = self.font.render(str(stat) + ' : ' + str(player.__getattribute__(stat)), True, c.black, c.white)
+                level.blit(textObj, (self.viewport.x+(self.viewport.width-200), self.viewport.y+position))
+                position += 20
+        
+            for equipment in player.equipped:
+                textObj = self.font.render(str(equipment), True, c.black, c.white)
+                level.blit(textObj, (self.viewport.x+(self.viewport.width-200), self.viewport.y+position))
+                position += 20
+            
                 
     def openInventory(self):
         if self.inventoryOpen:
@@ -44,10 +83,13 @@ class GUI(object):
     def update(self):
         pass
         
-    def draw(self, screen):
-        self.draw_healthbars(screen)
-        self.draw_workbars(screen)
-        self.draw_hotbar(screen)
+    def draw(self, level, viewport):
+        self.draw_healthbars(level)
+        self.draw_workbars(level)
+        self.draw_hotbar(level)
+        self.draw_inventory(level)
+        self.draw_charactersheet(level)
+
                     
                 
     # print('test')

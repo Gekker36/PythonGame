@@ -289,6 +289,11 @@ class Inventory(object):
 
         
     def add_item(self, item):
+        for i in self.items:
+            if i.name == item.name and i.isStackable == True:
+                i.amount +=1
+                return
+        
         if len(self.items)<self.size:
             self.items.append(item)
         else:
@@ -476,8 +481,8 @@ class Control(object):
         self.keys=pg.key.get_pressed()
         self.logictimer = 0
         self.drawtimer = 0
-        self.GUI = GUI.GUI()
         self.viewport = self.screen.get_rect()
+        self.GUI = GUI.GUI(self.viewport, self)
         self.level = pg.Surface((c.mapWidth*c.tileSize,c.mapHeight*c.tileSize)).convert()
         self.level_rect = self.level.get_rect()
 
@@ -492,9 +497,10 @@ class Control(object):
         spell_sprites.update(deltatime)
         resource_sprites.update(deltatime)
         character_sprites.update(self.world.obstacles, deltatime)
+        self.update_viewport()
         self.GUI.update()
         
-        self.update_viewport()
+        
         
         self.logictimer +=deltatime
         if self.logictimer>1:
@@ -504,9 +510,6 @@ class Control(object):
     def update_viewport(self):
         self.viewport.center = self.world.player.rect.center
         self.viewport.clamp_ip(self.level_rect)
-        
-
-                
 
                     
     def draw(self, deltatime):
@@ -517,11 +520,9 @@ class Control(object):
         resource_sprites.draw(self.level)
         object_sprites.draw(self.level)
         character_sprites.draw(self.level)
-        self.GUI.draw(self.level)
-        
- 
-        
+        self.GUI.draw(self.level,self.viewport)
         self.screen.blit(self.level, (0,0), self.viewport)
+
         pg.display.update()
         
 
