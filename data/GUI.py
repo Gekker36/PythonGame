@@ -13,6 +13,7 @@ class GUI(object):
         self.viewport = viewport
         self.control = control
         self.font = pg.font.SysFont('arial',18)
+        self.hotbarSelected = 1
 
     def draw_healthbars(self, screen):
         for enemy in m.character_sprites:
@@ -29,18 +30,18 @@ class GUI(object):
                 
     def draw_inventory(self, level):
         if self.inventoryOpen:
-            pg.draw.rect(level, c.white, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)-300, 200,300))
+            pg.draw.rect(level, c.white, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)-364, 200,300))
             
             
             if len(self.control.world.player.inventory.items):
                 position = 0
                 for item in self.control.world.player.inventory.items:
                     textObj = self.font.render(str(item.name)+'x'+str(item.amount), True, c.black, c.white)
-                    level.blit(textObj, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)+position-300))
+                    level.blit(textObj, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)+position-364))
                     position += 20
             else:                
                 textObj = self.font.render(str('Inventory is empty' ), True, c.black, c.white)
-                level.blit(textObj, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)-300))
+                level.blit(textObj, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)-364))
                 
                 
     def draw_charactersheet(self, level):
@@ -61,7 +62,20 @@ class GUI(object):
                 level.blit(textObj, (self.viewport.x+(self.viewport.width-200), self.viewport.y+position))
                 position += 20
             
-                
+    def draw_hotbar(self, level):
+        position = 112
+        for i in range(9):
+            if i == self.hotbarSelected-1:
+                level.blit(setup.GFX['Hotbar_Selected'], (self.viewport.x + position, self.viewport.y+(self.viewport.height)-64))
+                textObj = self.font.render(str(i+1), True, c.white, c.red)
+            else:
+                level.blit(setup.GFX['Empty_Inventory'].convert(), (self.viewport.x + position, self.viewport.y+(self.viewport.height)-64))
+                textObj = self.font.render(str(i+1), True, c.white, c.blue)
+            level.blit(textObj, (self.viewport.x + position, self.viewport.y+(self.viewport.height)-64))
+            position += 64
+        
+        
+             
     def openInventory(self):
         if self.inventoryOpen:
             print('Closing invenventory')
@@ -77,8 +91,7 @@ class GUI(object):
             print('Opening Character Screen')
         self.charactersheetOpen = not self.charactersheetOpen
     
-    def draw_hotbar(self, screen):
-        pg.display.get_surface().blit(setup.GFX['Empty_Inventory'].convert(), (100,100))
+
         
     def update(self):
         pass
