@@ -23,6 +23,26 @@ DIRECT_DICT = {pg.K_LEFT  : (-1, 0),
                pg.K_UP    : ( 0,-1),
                pg.K_DOWN  : ( 0, 1)}
                
+itemlist = {
+        'sword': {
+                'icon': 'DARKGREEN',
+                'value': 100,
+                'stats':{'attack':15},
+                'weight': 1
+                },
+        'shield': {
+                'icon': 'BROWN',
+                'value': 50,
+                'stats':{'defence':10},
+                'weight': 1
+                }, 
+        'healthpotion': {
+                'color': 'YELLOW',
+                'hardness': 1,
+                'weight': 2
+                }
+        }
+               
 
 class Player(pg.sprite.Sprite):
     def __init__(self, location, world, direction=pg.K_RIGHT):
