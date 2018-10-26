@@ -16,20 +16,20 @@ class GUI(object):
         self.hotbarSelected = 1
 
     def draw_healthbars(self, screen):
-        for enemy in m.character_sprites:
+        for enemy in self.control.world.character_sprites:
             if enemy.healthCurrent < enemy.healthMax:
                 length = 64*(enemy.healthCurrent/enemy.healthMax)
                 pg.draw.rect(screen, c.red, (enemy.rect.x,enemy.rect.y-15,length,10))
             
     def draw_workbars(self, screen):
-        for resource in m.resource_sprites:
+        for resource in self.control.world.resource_sprites:
             if resource.jobTimer !=0:
                 length = 64*(resource.jobTimer/resource.jobTime)
                 pg.draw.rect(screen, c.blue, (resource.rect.x,resource.rect.y-15,length,10))
                 
                 
     def draw_inventory(self, level):
-        if self.inventoryOpen:
+        if self.inventoryOpen: #Draw own inventory
             pg.draw.rect(level, c.white, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)-364, 200,300))
             
             
@@ -42,6 +42,21 @@ class GUI(object):
             else:                
                 textObj = self.font.render(str('Inventory is empty' ), True, c.black, c.white)
                 level.blit(textObj, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)-364))
+                
+                
+                
+            hit = pg.sprite.spritecollide(self.control.world.player, self.control.world.object_sprites, False)
+        
+            if hit and isinstance(hit[0],m.Chest): #Draw chest inventory
+                pg.draw.rect(level, c.white, (self.viewport.x+(self.viewport.width-450), self.viewport.y+(self.viewport.height)-364, 200,300))
+                if len(hit[0].inventory.items):
+                    position = 0
+                    for item in hit[0].inventory.items:
+                        textObj = self.font.render(str(item.name)+'x'+str(item.amount), True, c.black, c.white)
+                        level.blit(textObj, (self.viewport.x+(self.viewport.width-450), self.viewport.y+(self.viewport.height)+position-364))
+                        position += 20
+                
+        
                 
                 
     def draw_charactersheet(self, level):

@@ -10,10 +10,7 @@ import time
 
 
 
-character_sprites = pg.sprite.Group()
-resource_sprites = pg.sprite.Group()
-spell_sprites = pg.sprite.Group()
-object_sprites = pg.sprite.Group()
+
 
 
 
@@ -37,8 +34,9 @@ itemlist = {
                 'weight': 1
                 }, 
         'healthpotion': {
-                'color': 'YELLOW',
-                'hardness': 1,
+                'icon': 'YELLOW',
+                'value' : 10,
+                'stats':{'currentHealth':10},
                 'weight': 2
                 }
         }
@@ -46,7 +44,7 @@ itemlist = {
 
 class Player(pg.sprite.Sprite):
     def __init__(self, location, world, direction=pg.K_RIGHT):
-        pg.sprite.Sprite.__init__(self,character_sprites)
+        pg.sprite.Sprite.__init__(self)
         self.image = setup.CFX['Character']#.convert()
         self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect(topleft = location)
@@ -68,7 +66,7 @@ class Player(pg.sprite.Sprite):
         self.movespeed = 500
         self.level = 1
         self.experience = 0
-        self.working = False
+        self.action = False
         self.faith = 100
         
         
@@ -98,8 +96,9 @@ class Player(pg.sprite.Sprite):
             if key in self.direction_stack:
                 self.direction_stack.remove(key)
             if self.direction_stack:
-                self.direction = self.direction_stack[-1]      
-                
+                self.direction = self.direction_stack[-1]
+    
+
     def update(self, obstacles, dt):
         """Adjust the image and move as needed."""
         vector = [0, 0]
@@ -117,10 +116,10 @@ class Player(pg.sprite.Sprite):
             self.movement(obstacles, vector[1], 1)
         self.true_pos = list(self.rect.center)
         
-        hit = pg.sprite.spritecollide(self, resource_sprites,False)
+        hit = pg.sprite.spritecollide(self, self.world.resource_sprites,False)
         
         if hit:
-            if self.working:
+            if self.action:
                 hit[0].add_work(dt)
                 if hit[0].jobTimer >= hit[0].jobTime:
                     self.world.jobQueue.remove_job(hit[0])
@@ -144,8 +143,8 @@ class Player(pg.sprite.Sprite):
         surface.blit(self.image, self.rect)
         
 class Enemy(pg.sprite.Sprite):
-    def __init__(self, location,world):
-        pg.sprite.Sprite.__init__(self,character_sprites)
+    def __init__(self, location, world):
+        pg.sprite.Sprite.__init__(self)
         self.image = setup.GFX['Enemy'].convert()
         self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect()
@@ -278,8 +277,9 @@ class Spell(pg.sprite.Sprite):
         
 class Chest(pg.sprite.Sprite):
     def __init__(self, currentTile):
-        pg.sprite.Sprite.__init__(self,object_sprites)
+        pg.sprite.Sprite.__init__(self)
         self.inventory = Inventory()
+        self.inventory.add_item(Item())
         self.image = setup.GFX["Chest Closed"]
         self.rect = self.image.get_rect()
         self.rect.x = currentTile.rect.x
@@ -350,7 +350,7 @@ class Block(pg.sprite.Sprite):
         
 class Resource(pg.sprite.Sprite):
     def __init__(self, currentTile):
-        pg.sprite.Sprite.__init__(self,resource_sprites)
+        pg.sprite.Sprite.__init__(self)
         self.image = setup.GFX['Deposit'].convert()
         self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect()
@@ -422,7 +422,13 @@ class World(object):
         self.harvestable = []
         self.jobQueue = JobQueue()
         
+        self.character_sprites = pg.sprite.Group()
+        self.spell_sprites = pg.sprite.Group()
+        self.resource_sprites = pg.sprite.Group()
+        self.object_sprites = pg.sprite.Group()
+        
         self.player = (Player((400,400), self))
+        self.character_sprites.add(self.player)
         self.characters.append(self.player)
     
     def worldGenerator(self):
@@ -445,14 +451,14 @@ class World(object):
         
     def generate_resource(self,location):
         resource = Resource(location)
-        self.resources.append(resource)
+        self.resource_sprites.add(resource)
         # job = Job(resource)
         self.jobQueue.add_job(resource)
         # print(self.jobQueue.jobs)
     
     def create_chest(self, location):
         chest = Chest(location)
-        self.chests.append(chest)
+        self.object_sprites.add(chest)
 
     def change_tileType(self, tile, newTileType):
         tile.tileType = newTileType
@@ -460,19 +466,23 @@ class World(object):
         if tile.tileType == 'Dirt':
             self.growable.append(tile)
             self.jobQueue.add_job(tile)
+            
+    def create_NPC(self, location):
+        NPC = Enemy(location, self)
+        self.character_sprites.add(NPC)
 
-    
-    def grow_crop(self, tile):
-        self.growable.removable(tile)
-        self.growing.append(tile)
-        
-    def grown_crop(self, tile):
-        self.growing.removable(tile)
-        self.harvestable.append(tile)
-    
-    def harvest_crop(self, tile):
-        self.harvestable.removable(tile)
-        self.growable.append(tile)
+   ##   
+    # def grow_crop(self, tile):
+    #     self.growable.removable(tile)
+    #     self.growing.append(tile)
+    #     
+    # def grown_crop(self, tile):
+    #     self.growing.removable(tile)
+    #     self.harvestable.append(tile)
+    # 
+    # def harvest_crop(self, tile):
+    #     self.harvestable.removable(tile)
+    #     self.growable.append(tile)
         
     
     def update(dt):
@@ -514,9 +524,9 @@ class Control(object):
     def update(self,deltatime):
         t = time.time()
         
-        spell_sprites.update(deltatime)
-        resource_sprites.update(deltatime)
-        character_sprites.update(self.world.obstacles, deltatime)
+        self.world.spell_sprites.update(deltatime)
+        self.world.resource_sprites.update(deltatime)
+        self.world.character_sprites.update(self.world.obstacles, deltatime)
         self.update_viewport()
         self.GUI.update()
         
@@ -536,10 +546,10 @@ class Control(object):
         t = time.time()
         self.world.draw(self.level, self.viewport)
         self.world.obstacles.draw(self.level)
-        spell_sprites.draw(self.level)
-        resource_sprites.draw(self.level)
-        object_sprites.draw(self.level)
-        character_sprites.draw(self.level)
+        self.world.spell_sprites.draw(self.level)
+        self.world.resource_sprites.draw(self.level)
+        self.world.object_sprites.draw(self.level)
+        self.world.character_sprites.draw(self.level)
         self.GUI.draw(self.level,self.viewport)
         self.screen.blit(self.level, (0,0), self.viewport)
 

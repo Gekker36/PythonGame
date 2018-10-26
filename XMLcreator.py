@@ -21,8 +21,9 @@ def create_item(**kwargs):
     
     
 
-create_item(name='Sword', value=100 )
+create_item(name='Sword', value =100 )
 create_item(name='Shield',value =90)
+create_item(name='Potion', value = 10)
 
 
 tree = ET.ElementTree(root)

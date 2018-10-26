@@ -93,7 +93,7 @@ def playerInput(control):
             if(event.key == pg.K_KP2):
                 mousePos = pg.mouse.get_pos()
                 worldPos = mousePos[0]+control.viewport[0],mousePos[1]+control.viewport[1]
-                m.Enemy(worldPos,control.world)
+                control.world.create_NPC(worldPos)
             
             #Create Resource
             if(event.key == pg.K_KP3):
