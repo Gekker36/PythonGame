@@ -81,8 +81,16 @@ def playerInput(control):
             #Select hotbar 9
             if(event.key == pg.K_9):
                 control.GUI.hotbarSelected=9
-                
-                
+            #Select hotbar -
+            if(event.key == pg.K_KP_MINUS):
+                control.GUI.inventorySelection-=1
+            #Select hotbar =
+            if(event.key == pg.K_KP_PLUS):
+                control.GUI.inventorySelection+=1
+            #Select hotbar =
+            if(event.key == pg.K_KP_MULTIPLY):
+                if len(control.world.player.inventory.items) and control.GUI.inventoryOpen :
+                   control.world.player.inventory.remove_item(control.world.player.inventory.items[control.GUI.inventorySelection])
                 
 
             #Cast Fireball 
@@ -124,7 +132,7 @@ def playerInput(control):
                 
             #Interact
             if(event.key == pg.K_e):
-                control.world.player.working = True  
+                control.world.player.action = True  
                 
             #Inventory        
             if(event.key == pg.K_i):
@@ -134,6 +142,8 @@ def playerInput(control):
             if(event.key == pg.K_c):
                 control.GUI.openCharacterScreen()
                 
+                
+                
     
                     
         elif event.type == pg.KEYUP:
@@ -141,6 +151,6 @@ def playerInput(control):
                 control.world.player.pop_direction(event.key)
                     
             if(event.key == pg.K_e):
-                control.world.player.working = False
+                control.world.player.action = False
 
              

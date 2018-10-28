@@ -14,6 +14,7 @@ class GUI(object):
         self.control = control
         self.font = pg.font.SysFont('arial',18)
         self.hotbarSelected = 1
+        self.inventorySelection = 0
 
     def draw_healthbars(self, screen):
         for enemy in self.control.world.character_sprites:
@@ -32,15 +33,17 @@ class GUI(object):
         if self.inventoryOpen: #Draw own inventory
             pg.draw.rect(level, c.white, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)-364, 200,300))
             
+            ## Draw selection box
+            pg.draw.rect(level, c.lightblue, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)-364+self.inventorySelection*20, 200, 20))
             
             if len(self.control.world.player.inventory.items):
                 position = 0
                 for item in self.control.world.player.inventory.items:
-                    textObj = self.font.render(str(item.name)+'x'+str(item.amount), True, c.black, c.white)
+                    textObj = self.font.render(str(item.name)+'x'+str(item.amount), True, c.black)
                     level.blit(textObj, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)+position-364))
                     position += 20
             else:                
-                textObj = self.font.render(str('Inventory is empty' ), True, c.black, c.white)
+                textObj = self.font.render(str('Inventory is empty' ), True, c.black)
                 level.blit(textObj, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)-364))
                 
                 
@@ -57,7 +60,10 @@ class GUI(object):
                         position += 20
                 
         
-                
+    def draw_actionTiles(self,level):
+        pg.draw.rect(level, c.white, (self.control.world.player.currentTile.rect.x, self.control.world.player.currentTile.rect.y , 64, 64))
+        pg.draw.rect(level, c.red, (self.control.world.player.actionTile.rect.x, self.control.world.player.actionTile.rect.y , 64, 64))
+        
                 
     def draw_charactersheet(self, level):
         if self.charactersheetOpen:
@@ -117,6 +123,7 @@ class GUI(object):
         self.draw_hotbar(level)
         self.draw_inventory(level)
         self.draw_charactersheet(level)
+        self.draw_actionTiles(level)
 
                     
                 

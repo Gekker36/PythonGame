@@ -19,6 +19,8 @@ blue = (0,0,255)
 red = (255,0,0)
 brown = (153,76,0)
 
+lightblue = (100,100,255)
+
 ##GAME STATES
 
 LEVEL = 'level'

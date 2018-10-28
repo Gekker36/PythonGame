@@ -48,13 +48,16 @@ class Player(pg.sprite.Sprite):
         self.image = setup.CFX['Character']#.convert()
         self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect(topleft = location)
-
+        self.world = world
         self.true_pos = list(self.rect.center)
+        
+       
+        
         self.remainder = [0, 0]  #Adjust rect in integers; save remainders.
         self.direction = direction
         self.old_direction = None  #The Players previous direction every frame.
         self.direction_stack = []  #Held keys in the order they were pressed.=
-        self.world = world
+        
         
         self.inventory = Inventory()
         self.healthCurrent = 100
@@ -79,7 +82,7 @@ class Player(pg.sprite.Sprite):
         
     def castFireball(self):
         print("Casting Fireball")
-        Spell(self)
+        # Spell(self)
 
             
     def add_direction(self, key):
@@ -116,15 +119,33 @@ class Player(pg.sprite.Sprite):
             self.movement(obstacles, vector[1], 1)
         self.true_pos = list(self.rect.center)
         
-        hit = pg.sprite.spritecollide(self, self.world.resource_sprites,False)
+        playerTile = [s for s in self.world.tilemap if s.rect.collidepoint(self.true_pos)]
+        self.currentTile = playerTile[0]
         
-        if hit:
-            if self.action:
-                hit[0].add_work(dt)
-                if hit[0].jobTimer >= hit[0].jobTime:
-                    self.world.jobQueue.remove_job(hit[0])
-                    self.inventory.add_item(Item())
-                    print(self.inventory.items)
+        action_pos=self.true_pos
+        
+        if self.direction == 273:       #UP
+            action_pos[1] = self.true_pos[1]-64
+        if self.direction == 275:       #Right
+            action_pos[0] = self.true_pos[0]+64 
+        if self.direction == 274:       #DOWN
+            action_pos[1] = self.true_pos[1]+64 
+        if self.direction == 276:       #LEFT
+            action_pos[0] = self.true_pos[0]-64 
+        
+        actionTile = [s for s in self.world.tilemap if s.rect.collidepoint(action_pos)]
+        self.actionTile = actionTile[0]
+            
+            
+        hit=self.actionTile.rect.collidelist(self.world.resource_rect)
+        
+        if hit != -1 and self.action:
+            target = self.world.resources[hit]
+            target.add_work(dt)
+            if target.jobTimer >= target.jobTime:
+                # self.world.jobQueue.remove_job(target)
+                self.inventory.add_item(Item())
+                print(self.inventory.items)
         
 
         
@@ -138,9 +159,12 @@ class Player(pg.sprite.Sprite):
         while pg.sprite.spritecollideany(self, collisions, callback):
             self.rect[i] += (1 if offset<0 else -1)
             self.remainder[i] = 0
+            
                 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
+
+
         
 class Enemy(pg.sprite.Sprite):
     def __init__(self, location, world):
@@ -238,7 +262,7 @@ class Spell(pg.sprite.Sprite):
     def __init__(self, player):
         self.manaCost = 10
         if player.manaCurrent >= self.manaCost:
-            pg.sprite.Sprite.__init__(self, spell_sprites)
+            pg.sprite.Sprite.__init__(self, player.world.spell_sprites)
             self.image = setup.GFX['Orb of Flame'].convert()
             self.rect = self.image.get_rect()
             self.rect.x = player.rect.x
@@ -348,10 +372,10 @@ class Block(pg.sprite.Sprite):
         self.rect = self.image.get_rect(topleft = location)
         self.mask = pg.mask.from_surface(self.image)
         
-class Resource(pg.sprite.Sprite):
+class Resource(object):
     def __init__(self, currentTile):
         pg.sprite.Sprite.__init__(self)
-        self.image = setup.GFX['Deposit'].convert()
+        self.image = setup.GFX['Stone_Deposit'].convert()
         self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect()
         self.mask = pg.mask.from_surface(self.image)
@@ -414,17 +438,20 @@ class World(object):
         self.mapWidth = c.mapWidth
         self.tileSize = c.tileSize
         self.worldGenerator()
-        self.resources = []
-        self.chests = []
+        
         self.characters = []
-        self.growable = []
-        self.growing = []
-        self.harvestable = []
+        self.resources = []
+        # self.chests = []
+        
+        # self.growable = []
+        # self.growing = []
+        # self.harvestable = []
         self.jobQueue = JobQueue()
         
         self.character_sprites = pg.sprite.Group()
         self.spell_sprites = pg.sprite.Group()
         self.resource_sprites = pg.sprite.Group()
+        self.resource_rect = []
         self.object_sprites = pg.sprite.Group()
         
         self.player = (Player((400,400), self))
@@ -451,7 +478,11 @@ class World(object):
         
     def generate_resource(self,location):
         resource = Resource(location)
-        self.resource_sprites.add(resource)
+       
+        # self.resource_sprites.add(resource)
+        self.resources.append(resource)
+        self.resource_rect.append(resource.rect)
+        # self.obstacles.add(resource)
         # job = Job(resource)
         self.jobQueue.add_job(resource)
         # print(self.jobQueue.jobs)
@@ -492,12 +523,19 @@ class World(object):
         
     def draw(self, surface, viewport):
         
-        for character in self.characters:
-            character.draw(surface)
         
         for tile in self.tilemap:
             if viewport.colliderect(tile.rect):
                 tile.draw(surface)
+                
+                
+        for character in self.characters:
+            character.draw(surface)
+        
+        for resource in self.resources:
+            resource.draw(surface)
+        
+        
 
             
 
