@@ -143,12 +143,8 @@ class Player(pg.sprite.Sprite):
             target = self.world.resources[hit]
             target.add_work(dt)
             if target.jobTimer >= target.jobTime:
-                # self.world.jobQueue.remove_job(target)
                 self.inventory.add_item(Item())
                 print(self.inventory.items)
-        
-
-        
         
             
     def movement(self, obstacles, offset, i):
@@ -372,8 +368,8 @@ class Block(pg.sprite.Sprite):
         self.rect = self.image.get_rect(topleft = location)
         self.mask = pg.mask.from_surface(self.image)
         
-class Resource(object):
-    def __init__(self, currentTile):
+class Resource(pg.sprite.Sprite):
+    def __init__(self, world, currentTile):
         pg.sprite.Sprite.__init__(self)
         self.image = setup.GFX['Stone_Deposit'].convert()
         self.image.set_colorkey((255,255,255))
@@ -381,20 +377,21 @@ class Resource(object):
         self.mask = pg.mask.from_surface(self.image)
         self.rect.x = currentTile.rect.x
         self.rect.y = currentTile.rect.y
+        self.world = world
         self.jobTime = 2
         self.jobTimer = 0
-        self.worked = False
     
     def add_work(self, dt):
-        self.worked=True
         self.jobTimer +=dt
-
+        if self.jobTimer>= self.jobTime:
+            self.world.resources.remove(self)
+            self.world.resource_rect.remove(self.rect)
+            self.kill()
         
     def update(self, dt):
-        if self.worked:
-            self.worked = False
-            if self.jobTimer>= self.jobTime:
-                self.kill()
+        pass
+
+            
         
     def draw(self, surface):
         surface.blit(self.image, self.rect)
@@ -409,24 +406,10 @@ class Tile(object):
         self.mask = pg.mask.from_surface(self.image)
         self.world = world
         self.isPassable = True
-        self.hasCrop = False
-        self.crop =[]
-
-    def plant_crop(self, crop):
-        # print("Planting crop")
-        # self.crop= crop
-        self.hasCrop = True
-        self.croptTimer=0
-        
-    def harvest_crop(self):
-        # self.crop=[]
-        self.hasCrop = False
         
     def update(self, dt):
         self.image = setup.TMX[self.tileType]
-        
-        if self.hasCrop:
-            self.cropTimer += dt
+
         
     def draw(self, surface):
         surface.blit(self.image, self.rect)
@@ -442,10 +425,7 @@ class World(object):
         self.characters = []
         self.resources = []
         # self.chests = []
-        
-        # self.growable = []
-        # self.growing = []
-        # self.harvestable = []
+    
         self.jobQueue = JobQueue()
         
         self.character_sprites = pg.sprite.Group()
@@ -476,68 +456,31 @@ class World(object):
         obstacles.append([Block(((self.mapWidth-1)*self.tileSize,64*h)) for h in range(self.mapHeight)])
         self.obstacles = pg.sprite.Group(obstacles)
         
-    def generate_resource(self,location):
-        resource = Resource(location)
-       
-        # self.resource_sprites.add(resource)
+    def generate_resource(self, location):
+        resource = Resource(self, location)
+        self.resource_sprites.add(resource)
         self.resources.append(resource)
         self.resource_rect.append(resource.rect)
-        # self.obstacles.add(resource)
-        # job = Job(resource)
-        self.jobQueue.add_job(resource)
-        # print(self.jobQueue.jobs)
     
     def create_chest(self, location):
         chest = Chest(location)
         self.object_sprites.add(chest)
 
-    def change_tileType(self, tile, newTileType):
-        tile.tileType = newTileType
-        tile.image = setup.TMX[tile.tileType].convert_alpha()  
-        if tile.tileType == 'Dirt':
-            self.growable.append(tile)
-            self.jobQueue.add_job(tile)
-            
     def create_NPC(self, location):
         NPC = Enemy(location, self)
         self.character_sprites.add(NPC)
-
-   ##   
-    # def grow_crop(self, tile):
-    #     self.growable.removable(tile)
-    #     self.growing.append(tile)
-    #     
-    # def grown_crop(self, tile):
-    #     self.growing.removable(tile)
-    #     self.harvestable.append(tile)
-    # 
-    # def harvest_crop(self, tile):
-    #     self.harvestable.removable(tile)
-    #     self.growable.append(tile)
-        
     
     def update(dt):
         for character in self.characters:
             character.update(self.obstacles, dt)
-
         
     def draw(self, surface, viewport):
-        
-        
         for tile in self.tilemap:
             if viewport.colliderect(tile.rect):
                 tile.draw(surface)
                 
-                
         for character in self.characters:
             character.draw(surface)
-        
-        for resource in self.resources:
-            resource.draw(surface)
-        
-        
-
-            
 
 
 class Control(object):
@@ -554,10 +497,8 @@ class Control(object):
         self.level = pg.Surface((c.mapWidth*c.tileSize,c.mapHeight*c.tileSize)).convert()
         self.level_rect = self.level.get_rect()
 
-        
     def event_loop(self):
         inputcontroller.playerInput(self)
-
                 
     def update(self,deltatime):
         t = time.time()
@@ -567,8 +508,6 @@ class Control(object):
         self.world.character_sprites.update(self.world.obstacles, deltatime)
         self.update_viewport()
         self.GUI.update()
-        
-        
         
         self.logictimer +=deltatime
         if self.logictimer>1:
@@ -618,7 +557,6 @@ class Control(object):
             self.draw(self.deltatime)
             pg.display.update()
             self.display_fps()
-        
         
 def divfmod(x, y):
     """Identical to the builtin divmod but using math.fmod to retain signs."""
