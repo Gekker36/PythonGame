@@ -103,14 +103,16 @@ def playerInput(control):
                 worldPos = mousePos[0]+control.viewport[0],mousePos[1]+control.viewport[1]
                 control.world.create_NPC(worldPos)
             
-            #Create Resource
+            #Create Stone Resource
             if(event.key == pg.K_KP3):
                 mousePos= pg.mouse.get_pos()
                 worldPos = [mousePos[0]+control.viewport.x, mousePos[1]+control.viewport.y]
                 
                 mouseColliders = [s for s in control.world.tilemap if s.rect.collidepoint(worldPos)]
                 currentTile = mouseColliders[0]
-                control.world.generate_resource(currentTile)
+                control.world.generate_resource('Stone', currentTile)
+                
+            
                 
             #Create Chest
             if(event.key == pg.K_KP4):
@@ -120,6 +122,15 @@ def playerInput(control):
                 mouseColliders = [s for s in control.world.tilemap if s.rect.collidepoint(worldPos)]
                 currentTile = mouseColliders[0]
                 control.world.create_chest(currentTile)
+                
+            #Create Tree Resource
+            if(event.key == pg.K_KP5):
+                mousePos= pg.mouse.get_pos()
+                worldPos = [mousePos[0]+control.viewport.x, mousePos[1]+control.viewport.y]
+                
+                mouseColliders = [s for s in control.world.tilemap if s.rect.collidepoint(worldPos)]
+                currentTile = mouseColliders[0]
+                control.world.generate_resource('Tree', currentTile)
                 
             #Change Tile
             # if(event.key == pg.K_5):

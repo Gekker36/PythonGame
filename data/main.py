@@ -21,23 +21,38 @@ DIRECT_DICT = {pg.K_LEFT  : (-1, 0),
                pg.K_DOWN  : ( 0, 1)}
                
 itemlist = {
-        'sword': {
+        'Sword': {
                 'icon': 'DARKGREEN',
                 'value': 100,
                 'stats':{'attack':15},
-                'weight': 1
+                'weight': 1,
+                'stackable' : False
                 },
-        'shield': {
+        'Shield': {
                 'icon': 'BROWN',
                 'value': 50,
                 'stats':{'defence':10},
-                'weight': 1
+                'weight': 1,
+                'stackable' : False
                 }, 
-        'healthpotion': {
+        'Healthpotion': {
                 'icon': 'YELLOW',
                 'value' : 10,
                 'stats':{'currentHealth':10},
-                'weight': 2
+                'weight': 1,
+                'stackable' : True
+                },
+        'Stone': {
+                'icon': 'YELLOW',
+                'value' : 1,
+                'weight': 1,
+                'stackable' : True
+                },
+        'Wood': {
+                'icon': 'YELLOW',
+                'value' : 10,
+                'weight': 1,
+                'stackable' : True
                 }
         }
                
@@ -118,6 +133,7 @@ class Player(pg.sprite.Sprite):
             self.movement(obstacles, vector[0], 0)
             self.movement(obstacles, vector[1], 1)
         self.true_pos = list(self.rect.center)
+        self.true_pos[1] += 20
         
         playerTile = [s for s in self.world.tilemap if s.rect.collidepoint(self.true_pos)]
         self.currentTile = playerTile[0]
@@ -143,7 +159,9 @@ class Player(pg.sprite.Sprite):
             target = self.world.resources[hit]
             target.add_work(dt)
             if target.jobTimer >= target.jobTime:
-                self.inventory.add_item(Item())
+                loot = target.get_loot()
+                for l in loot:
+                    self.inventory.add_item(l)
                 print(self.inventory.items)
         
             
@@ -299,7 +317,7 @@ class Chest(pg.sprite.Sprite):
     def __init__(self, currentTile):
         pg.sprite.Sprite.__init__(self)
         self.inventory = Inventory()
-        self.inventory.add_item(Item())
+        self.inventory.add_item(Item('Sword'))
         self.image = setup.GFX["Chest Closed"]
         self.rect = self.image.get_rect()
         self.rect.x = currentTile.rect.x
@@ -314,13 +332,14 @@ class Chest(pg.sprite.Sprite):
         surface.blit(self.image, self.rect)
     
 class Item(object):
-    def __init__(self):
+    def __init__(self, name):
         self.image = setup.GFX['Sword_icon']
-        self.name = "Sword"
+        self.name = name
         self.type = "Weapon"
-        self.isStackable = False
-        self.price = 100
-        self.amount = 1       
+        self.amount =1
+        for key in itemlist[name]:
+            setattr(self, key, itemlist[name][key])
+           
         
 class Inventory(object):
     def __init__(self):
@@ -369,15 +388,16 @@ class Block(pg.sprite.Sprite):
         self.mask = pg.mask.from_surface(self.image)
         
 class Resource(pg.sprite.Sprite):
-    def __init__(self, world, currentTile):
+    def __init__(self, type, world, currentTile):
         pg.sprite.Sprite.__init__(self)
-        self.image = setup.GFX['Stone_Deposit'].convert()
+        self.image = setup.GFX[type].convert()
         self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect()
         self.mask = pg.mask.from_surface(self.image)
         self.rect.x = currentTile.rect.x
         self.rect.y = currentTile.rect.y
         self.world = world
+        self.type = type
         self.jobTime = 2
         self.jobTimer = 0
     
@@ -387,6 +407,14 @@ class Resource(pg.sprite.Sprite):
             self.world.resources.remove(self)
             self.world.resource_rect.remove(self.rect)
             self.kill()
+    
+    def get_loot(self):
+        loot = []
+        if self.type == 'Tree':
+            loot.append(Item('Wood'))
+        else:
+            loot.append(Item(self.type))
+        return loot
         
     def update(self, dt):
         pass
@@ -456,8 +484,8 @@ class World(object):
         obstacles.append([Block(((self.mapWidth-1)*self.tileSize,64*h)) for h in range(self.mapHeight)])
         self.obstacles = pg.sprite.Group(obstacles)
         
-    def generate_resource(self, location):
-        resource = Resource(self, location)
+    def generate_resource(self, type, location):
+        resource = Resource(type, self, location)
         self.resource_sprites.add(resource)
         self.resources.append(resource)
         self.resource_rect.append(resource.rect)
