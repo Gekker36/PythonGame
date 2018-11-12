@@ -71,7 +71,7 @@ class Player(pg.sprite.Sprite):
         self.remainder = [0, 0]  #Adjust rect in integers; save remainders.
         self.direction = direction
         self.old_direction = None  #The Players previous direction every frame.
-        self.direction_stack = []  #Held keys in the order they were pressed.=
+        self.direction_stack = []  #Held keys in the order they were pressed.
         
         
         self.inventory = Inventory()
@@ -98,6 +98,9 @@ class Player(pg.sprite.Sprite):
     def castFireball(self):
         print("Casting Fireball")
         # Spell(self)
+        
+    def craft(self, item):
+        self.inventory.add_item(item)
 
             
     def add_direction(self, key):

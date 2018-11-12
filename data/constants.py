@@ -21,8 +21,14 @@ brown = (153,76,0)
 
 lightblue = (100,100,255)
 
-##GAME STATES
+## Main menu options
 
+menu_options = ['Character Sheet', 'Inventory', 'Crafting', 'Spells', 'Talents', 'Options', 'Save', 'Load']
+
+##Crafting recipes
+crafting_recipes = {"sword" :["wood", "iron"]}
+
+##GAME STATES
 LEVEL = 'level'
 # TOWN = 'town'
 # MAIN_MENU = 'main menu'

@@ -50,10 +50,17 @@ def playerInput(control):
                         
             
         elif event.type == pg.KEYDOWN:
-            if(event.key == pg.K_RIGHT) or (event.key == pg.K_LEFT) or (event.key == pg.K_DOWN) or (event.key == pg.K_UP):
-                control.world.player.add_direction(event.key)
+            if not control.GUI.menuOpen:
+                if(event.key == pg.K_RIGHT) or (event.key == pg.K_LEFT) or (event.key == pg.K_DOWN) or (event.key == pg.K_UP):
+                    control.world.player.add_direction(event.key)
                 
+            if control.GUI.menuOpen:
+                if(event.key == pg.K_DOWN):
+                    control.GUI.menu_selecting(1)
                 
+                if(event.key == pg.K_UP):
+                    control.GUI.menu_selecting(-1)
+            
             #Select hotbar 1
             if(event.key == pg.K_1):
                 control.GUI.hotbarSelected=1
@@ -83,10 +90,10 @@ def playerInput(control):
                 control.GUI.hotbarSelected=9
             #Select hotbar -
             if(event.key == pg.K_KP_MINUS):
-                control.GUI.inventorySelection-=1
+                control.GUI.inventory_selecting(-1)
             #Select hotbar =
             if(event.key == pg.K_KP_PLUS):
-                control.GUI.inventorySelection+=1
+                control.GUI.inventory_selecting(1)
             #Select hotbar =
             if(event.key == pg.K_KP_MULTIPLY):
                 if len(control.world.player.inventory.items) and control.GUI.inventoryOpen :
@@ -145,7 +152,7 @@ def playerInput(control):
             if(event.key == pg.K_e):
                 control.world.player.action = True  
                 
-            #Inventory        
+            #Inventory Screen
             if(event.key == pg.K_i):
                 control.GUI.openInventory()
                 
@@ -153,8 +160,11 @@ def playerInput(control):
             if(event.key == pg.K_c):
                 control.GUI.openCharacterScreen()
                 
-                
-                
+            #Crafting Screen        
+            if(event.key == pg.K_p):
+                control.GUI.openCraftingScreen() 
+                 
+ 
     
                     
         elif event.type == pg.KEYUP:

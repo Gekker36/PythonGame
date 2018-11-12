@@ -8,13 +8,40 @@ from . import setup
 
 class GUI(object):
     def __init__(self, viewport,control):
+        
+        self.menu_stack = []
+        self.menuOpen = False
+        self.menuSelection=0
         self.inventoryOpen = False
+        self.inventorySelection = 0
         self.charactersheetOpen = False
+        self.craftingOpen =  False
+        
         self.viewport = viewport
         self.control = control
         self.font = pg.font.SysFont('arial',18)
         self.hotbarSelected = 1
-        self.inventorySelection = 0
+
+
+    def selectMainMenu(self):
+        if not self.menuOpen:
+            self.menuOpen = True
+            self.menu_stack.append('main')
+            print (self.menu_stack)
+            
+        
+    def returnMainMenu(self):
+        if self.menu_stack[-1] == 'main':
+            self.menuOpen = False
+            self.menu_stack.remove('main')
+             
+    
+    def menu_selecting(self, change):
+        self.menuSelection+= change
+        if self.menuSelection < 0:
+            self.menuSelection = len(c.menu_options)-1
+        if self.menuSelection > len(c.menu_options)-1:
+            self.menuSelection = 0
 
     def draw_healthbars(self, screen):
         for enemy in self.control.world.character_sprites:
@@ -27,8 +54,26 @@ class GUI(object):
             if resource.jobTimer !=0:
                 length = 64*(resource.jobTimer/resource.jobTime)
                 pg.draw.rect(screen, c.blue, (resource.rect.x,resource.rect.y-15,length,10))
+            
+    def draw_mainMenu(self, level):
+        if self.menuOpen:
+            
+            menuHeight = len(c.menu_options)*20
+            
+            pg.draw.rect(level, c.white, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)-(menuHeight+64), 200, menuHeight))
+            
+            ## Draw selection box
+            pg.draw.rect(level, c.lightblue, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)-(menuHeight+64)+self.menuSelection*20, 200, 20))
+            
+            
+            position =0
+            for item in c.menu_options:
+                textObj = self.font.render(str(item), True, c.black)
+                level.blit(textObj, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)+position-(menuHeight+64)))
+                position += 20
                 
                 
+            
     def draw_inventory(self, level):
         if self.inventoryOpen: #Draw own inventory
             pg.draw.rect(level, c.white, (self.viewport.x+(self.viewport.width-200), self.viewport.y+(self.viewport.height)-364, 200,300))
@@ -95,22 +140,6 @@ class GUI(object):
             level.blit(textObj, (self.viewport.x + position, self.viewport.y+(self.viewport.height)-64))
             position += 64
         
-        
-             
-    def openInventory(self):
-        if self.inventoryOpen:
-            print('Closing invenventory')
-        if not self.inventoryOpen:
-            print('Opening inventory')
-        self.inventoryOpen = not self.inventoryOpen
-        
-        
-    def openCharacterScreen(self):
-        if self.charactersheetOpen:
-            print('Closing Character Screen')
-        if not self.charactersheetOpen:
-            print('Opening Character Screen')
-        self.charactersheetOpen = not self.charactersheetOpen
     
 
         
@@ -121,6 +150,7 @@ class GUI(object):
         self.draw_healthbars(level)
         self.draw_workbars(level)
         self.draw_hotbar(level)
+        self.draw_mainMenu(level)
         self.draw_inventory(level)
         self.draw_charactersheet(level)
         self.draw_actionTiles(level)
