@@ -524,9 +524,9 @@ class Control(object):
         self.logictimer = 0
         self.drawtimer = 0
         self.viewport = self.screen.get_rect()
-        self.GUI = GUI.GUI(self.viewport, self)
         self.level = pg.Surface((c.mapWidth*c.tileSize,c.mapHeight*c.tileSize)).convert()
         self.level_rect = self.level.get_rect()
+        self.GUI = GUI.GUI(self)
 
     def event_loop(self):
         inputcontroller.playerInput(self)
@@ -558,7 +558,7 @@ class Control(object):
         self.world.resource_sprites.draw(self.level)
         self.world.object_sprites.draw(self.level)
         self.world.character_sprites.draw(self.level)
-        self.GUI.draw(self.level,self.viewport)
+        self.GUI.draw(self.level)
         self.screen.blit(self.level, (0,0), self.viewport)
 
         pg.display.update()

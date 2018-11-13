@@ -21,9 +21,12 @@ def playerInput(control):
                 if control.GUI.hotbarSelected < 1:
                     control.GUI.hotbarSelected = 9
                     
+        elif event.type == pg.MOUSEMOTION:    
+            control.GUI.updateMousePos(pg.mouse.get_pos())         
                     
         #do other stuff
-        #     mousePos = pg.mouse.get_pos()
+        # mousePos = pg.mouse.get_pos()
+    
         #     mouseColliders = [s for s in m.icon_sprites if s.rect.collidepoint(mousePos)]
         #     if mouseColliders:
         #         if gameControl.player.colliders:
@@ -50,11 +53,11 @@ def playerInput(control):
                         
             
         elif event.type == pg.KEYDOWN:
-            if not control.GUI.menuOpen:
+            if not control.GUI.mainMenuOpen:
                 if(event.key == pg.K_RIGHT) or (event.key == pg.K_LEFT) or (event.key == pg.K_DOWN) or (event.key == pg.K_UP):
                     control.world.player.add_direction(event.key)
                 
-            if control.GUI.menuOpen:
+            if control.GUI.mainMenuOpen:
                 if(event.key == pg.K_DOWN):
                     control.GUI.menu_selecting(1)
                 
@@ -163,8 +166,10 @@ def playerInput(control):
             #Crafting Screen        
             if(event.key == pg.K_p):
                 control.GUI.openCraftingScreen() 
-                 
- 
+                
+            #MainMenu Screen        
+            if(event.key == pg.K_RETURN):
+                control.GUI.openMainMenu()   
     
                     
         elif event.type == pg.KEYUP:
@@ -174,4 +179,4 @@ def playerInput(control):
             if(event.key == pg.K_e):
                 control.world.player.action = False
 
-             
+        
