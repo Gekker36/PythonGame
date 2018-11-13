@@ -119,7 +119,13 @@ class Player(pg.sprite.Sprite):
             if self.direction_stack:
                 self.direction = self.direction_stack[-1]
     
-
+    def startAction(self):
+        self.action = True
+        
+    def stopAction(self):
+        self.action = False
+        
+        
     def update(self, obstacles, dt):
         """Adjust the image and move as needed."""
         vector = [0, 0]
@@ -183,7 +189,7 @@ class Player(pg.sprite.Sprite):
 
 
         
-class Enemy(pg.sprite.Sprite):
+class NPC(pg.sprite.Sprite):
     def __init__(self, location, world):
         pg.sprite.Sprite.__init__(self)
         self.image = setup.GFX['Enemy'].convert()
@@ -338,10 +344,35 @@ class Item(object):
     def __init__(self, name):
         self.image = setup.GFX['Sword_icon']
         self.name = name
-        self.type = "Weapon"
-        self.amount =1
+        self.stackable = True
         for key in itemlist[name]:
             setattr(self, key, itemlist[name][key])
+
+class Weapon(Item):
+    def __init__(self, name):
+        super().__init__(name)
+        self.type = "Weapon"
+        
+class Armour(Item):
+    def __init__(self, name):
+        super().__init__(name)
+        self.type = "Armour"
+
+class Consumable(Item):
+    def __init__(self, name):
+        super().__init__(name)
+        self.type = "Consumable"
+    
+class Tool(Item):
+    def __init__(self, name):
+        super().__init__(name)
+        self.type = "Tool"
+
+class Furniture(Item):
+    def __init__(self, name):
+        super().__init__(name)
+        self.type = "Furniture"
+    
            
         
 class Inventory(object):
@@ -498,7 +529,7 @@ class World(object):
         self.object_sprites.add(chest)
 
     def create_NPC(self, location):
-        NPC = Enemy(location, self)
+        NPC = NPC(location, self)
         self.character_sprites.add(NPC)
     
     def update(dt):

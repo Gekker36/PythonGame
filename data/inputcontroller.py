@@ -11,8 +11,11 @@ def playerInput(control):
             
         elif event.type == pg.MOUSEBUTTONDOWN:
             
-            
-            if event.button == 4:
+            if event.button ==1:
+                control.GUI.leftMouseClick()
+                
+                
+            elif event.button == 4:
                 control.GUI.hotbarSelected += 1
                 if control.GUI.hotbarSelected > 9:
                     control.GUI.hotbarSelected = 1
@@ -102,7 +105,6 @@ def playerInput(control):
                 if len(control.world.player.inventory.items) and control.GUI.inventoryOpen :
                    control.world.player.inventory.remove_item(control.world.player.inventory.items[control.GUI.inventorySelection])
                 
-
             #Cast Fireball 
             if(event.key == pg.K_KP1):
                 control.world.player.castFireball()
@@ -122,7 +124,6 @@ def playerInput(control):
                 currentTile = mouseColliders[0]
                 control.world.generate_resource('Stone', currentTile)
                 
-            
                 
             #Create Chest
             if(event.key == pg.K_KP4):
@@ -153,23 +154,28 @@ def playerInput(control):
                 
             #Interact
             if(event.key == pg.K_e):
-                control.world.player.action = True  
+                control.world.player.startAction()  
                 
             #Inventory Screen
             if(event.key == pg.K_i):
-                control.GUI.openInventory()
+                control.GUI.toggleInventory()
                 
             #Character Screen        
             if(event.key == pg.K_c):
-                control.GUI.openCharacterScreen()
+                control.GUI.toggleCharacterScreen()
                 
             #Crafting Screen        
             if(event.key == pg.K_p):
-                control.GUI.openCraftingScreen() 
+                control.GUI.toggleCraftingScreen() 
                 
-            #MainMenu Screen        
-            if(event.key == pg.K_RETURN):
-                control.GUI.openMainMenu()   
+
+                
+            #Main Menu        
+            if(event.key == pg.K_ESCAPE):
+                if len(control.GUI.menu_stack):
+                    control.GUI.menu_stack.pop(-1)
+                else:
+                    control.GUI.toggleMainMenu()
     
                     
         elif event.type == pg.KEYUP:
@@ -177,6 +183,6 @@ def playerInput(control):
                 control.world.player.pop_direction(event.key)
                     
             if(event.key == pg.K_e):
-                control.world.player.action = False
+                control.world.player.stopAction()
 
         

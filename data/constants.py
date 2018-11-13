@@ -1,7 +1,7 @@
 mapWidth  = 20
 mapHeight = 20
 tileSize  = 64
-SCREEN_SIZE = (800, 608)
+SCREEN_SIZE = (800, 600)
 
 
 ##Tile ID
@@ -23,7 +23,13 @@ lightblue = (100,100,255)
 
 ## Main menu options
 
-menu_options = ['Character Sheet', 'Inventory', 'Crafting', 'Spells', 'Talents', 'Options', 'Save', 'Load']
+menu_list = ['Character Sheet', 'Inventory', 'Crafting', 'Spells', 'Talents', 'Options', 'Save', 'Load']
+# mainMenuStartx  = 
+# mainMenuStarty  = 
+# mainMenuWidth   = 
+# mainMenuHeight  = 
+
+options_general = [['Resolution', SCREEN_SIZE], ['draw_actionTiles', False]]
 
 ##Crafting recipes
 crafting_recipes = {"sword" :["wood", "iron"]}
