@@ -11,10 +11,12 @@ def playerInput(control):
             
         elif event.type == pg.MOUSEBUTTONDOWN:
             
-            if event.button ==1:
+            if event.button == 1:
                 control.GUI.leftMouseClick()
-                
-                
+            elif event.button == 2:
+                control.GUI.middleMouseClick()
+            elif event.button == 3:
+                control.GUI.rightMouseClick()
             elif event.button == 4:
                 control.GUI.hotbarSelected += 1
                 if control.GUI.hotbarSelected > 9:

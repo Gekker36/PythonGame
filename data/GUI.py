@@ -67,10 +67,36 @@ class GUI(object):
                     self.menu_stack.remove(menu)
         else:
             self.menu_stack.append(ChestMenu(self))
-
+    
+    def toggleContextMenu(self, context):
+        if any(isinstance(menu, ContextMenu) for menu in self.menu_stack):
+            for menu in self.menu_stack:
+                if isinstance(menu, ContextMenu):
+                    self.menu_stack.remove(menu)
+        else:
+            self.menu_stack.append(ContextMenu(self,context))
+            
+    def toggleInfoMenu(self, context):
+        if any(isinstance(menu, InfoMenu) for menu in self.menu_stack):
+            for menu in self.menu_stack:
+                if isinstance(menu, InfoMenu):
+                    self.menu_stack.remove(menu)
+        else:
+            self.menu_stack.append(InfoMenu(self, context))
         
         
     def leftMouseClick(self):
+        for menu in self.menu_stack[::-1]:
+            if menu.startX < self.mousePos[0] < menu.endX and menu.startY < self.mousePos[1] < menu.endY:
+                selectionX = menu.startX
+                selectionY = math.floor((self.mousePos[1]-menu.startY)/20)
+                menu.selection(selectionX, selectionY)
+                return
+    
+    def middleMouseClick(self):
+        pass
+                
+    def rightMouseClick(self):
         for menu in self.menu_stack[::-1]:
             if menu.startX < self.mousePos[0] < menu.endX and menu.startY < self.mousePos[1] < menu.endY:
                 selectionX = menu.startX
@@ -182,9 +208,11 @@ class Menu(object):
         
     def drawSelectionBox(self):
         if self.startX < self.GUI.mousePos[0] < self.endX and self.startY < self.GUI.mousePos[1] < self.endY:
-            selectionX = self.startX
-            selectionY = self.startY + math.floor((self.GUI.mousePos[1]-self.startY)/20)*20
-            pg.draw.rect(self.level, c.lightblue, (selectionX, selectionY, 200, 20))
+            if self.GUI.menu_stack[-1] == self:
+                self.selectionX = self.startX
+                self.selectionY = self.startY + math.floor((self.GUI.mousePos[1]-self.startY)/20)*20
+                
+            pg.draw.rect(self.level, c.lightblue, (self.selectionX, self.selectionY, self.deltaX, 20))
         
     def drawIcons(self):
         pass
@@ -279,7 +307,7 @@ class InventoryMenu(Menu):
         
     def selection(self, selectX, selectY):
         if selectY < len(self.inventory.items):
-            print(self.inventory.items[selectY])
+            self.GUI.toggleContextMenu(self.inventory.items[selectY])
         
         
     def drawText(self):
@@ -292,6 +320,69 @@ class InventoryMenu(Menu):
         else:                
             textObj = self.GUI.font.render(str('Inventory is empty' ), True, c.black)
             self.level.blit(textObj, (self.startX, self.startY + position))
+
+class ContextMenu(Menu):
+    def __init__(self, GUI, context):
+        super().__init__(GUI)
+        self.context = context
+        self.options = ['Use', 'Info', 'Drop','Cancel']
+        self.menuHeight = len(self.options)*20
+        self.mousePosX = GUI.mousePos[0] - self.viewport.x
+        self.mousePosY = GUI.mousePos[1] - self.viewport.y
+        
+    def update(self):
+        self.startX  = self.viewport.x + self.mousePosX
+        self.startY  = self.viewport.y + self.mousePosY
+        self.deltaX  = 100
+        self.deltaY  = self.menuHeight
+        self.endX    = self.startX + self.deltaX
+        self.endY    = self.startY + self.deltaY
+        
+    def selection(self, selectX, selectY):
+        if selectY < len(self.options):
+            
+            if self.options[selectY] == 'Use':
+                self.context.use()
+            if self.options[selectY] == 'Info':
+                self.GUI.toggleInfoMenu(self.context)
+            if self.options[selectY] == 'Cancel':
+                self.GUI.toggleContextMenu()
+                
+            
+    def drawText(self):
+        position = 0
+        for option in self.options:
+                textObj = self.GUI.font.render(str(option), True, c.black)
+                self.level.blit(textObj, (self.startX, self.startY + position))
+                position += 20
+                
+class InfoMenu(Menu):
+    def __init__(self, GUI, context):
+        super().__init__(GUI)
+        self.context = context
+        
+    def update(self):
+        self.startX  = self.viewport.x+(self.viewport.width/2)-200
+        self.startY  = self.viewport.y+(self.viewport.height/2)-100
+        self.deltaX  = 400
+        self.deltaY  = 200
+        self.endX    = self.startX + self.deltaX
+        self.endY    = self.startY + self.deltaY
+        
+    def drawText(self):
+        position = 0
+        textObj=[]
+        
+        
+        textObj.append(self.GUI.font.render(str(self.context.name), True, c.black))
+        textObj.append(self.GUI.font.render(str(self.context.effect), True, c.black))
+        textObj.append(self.GUI.font.render(str(self.context.weight), True, c.black))
+        textObj.append(self.GUI.font.render(str(self.context.value), True, c.black))
+        
+        for text in textObj:
+            self.level.blit(text, (self.startX, self.startY + position))
+            position += 20
+        
             
 class ChestMenu(Menu):
     def __init__(self, GUI):
