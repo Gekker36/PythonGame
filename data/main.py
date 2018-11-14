@@ -38,7 +38,7 @@ itemlist = {
         'Healthpotion': {
                 'icon': 'YELLOW',
                 'value' : 10,
-                'effect':{'currentHealth':10},
+                'effect':{'healthCurrent': +10},
                 'weight': 1,
                 'stackable' : True
                 },
@@ -76,7 +76,7 @@ class Player(pg.sprite.Sprite):
         
         self.inventory = Inventory()
         self.inventory.add_item(Consumable('Healthpotion'))
-        self.healthCurrent = 100
+        self.healthCurrent = 50
         self.healthMax = 100
         self.healthRegen = 1
         self.manaCurrent = 50
@@ -369,10 +369,12 @@ class Consumable(Item):
         super().__init__(name)
         self.type = "Consumable"
         
-    def use(self):
+    def use(self, user):
         print('Using %s' %self.name)
         for key in self.effect:
             print(key)
+            print(self.effect[key])
+            user.__setattr__(key, user.__getattribute__(key) + self.effect[key])
     
 class Tool(Item):
     def __init__(self, name):

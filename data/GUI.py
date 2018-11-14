@@ -342,7 +342,7 @@ class ContextMenu(Menu):
         if selectY < len(self.options):
             
             if self.options[selectY] == 'Use':
-                self.context.use()
+                self.context.use(self.GUI.control.world.player)
             if self.options[selectY] == 'Info':
                 self.GUI.toggleInfoMenu(self.context)
             if self.options[selectY] == 'Cancel':
