@@ -1,7 +1,9 @@
 import os, random
 import pygame as pg
 from . import constants as c
-      
+import math
+import time
+        
         
 class Control(object):
     """
@@ -154,3 +156,15 @@ def load_all_tmx(directory, colorkey=(255,0,255), accept=('.png', '.jpg', '.bmp'
                 img.set_colorkey(colorkey)
             graphics[name] = img
     return graphics
+    
+def divfmod(x, y):
+    """Identical to the builtin divmod but using math.fmod to retain signs."""
+    fmod = math.fmod(x, y)
+    div = (x-fmod)//y
+    return div, fmod
+    
+ANGLE_UNIT_SPEED = math.sqrt(2)/2
+DIRECT_DICT = {pg.K_LEFT  : (-1, 0),
+               pg.K_RIGHT : ( 1, 0),
+               pg.K_UP    : ( 0,-1),
+               pg.K_DOWN  : ( 0, 1)}

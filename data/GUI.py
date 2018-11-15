@@ -5,9 +5,6 @@ from . import settings as s
 from . import main as m
 from . import setup
 
-
-
-
 class GUI(object):
     def __init__(self, control):
         
@@ -325,11 +322,16 @@ class ContextMenu(Menu):
     def __init__(self, GUI, context):
         super().__init__(GUI)
         self.context = context
-        self.options = ['Use', 'Info', 'Drop','Cancel']
-        self.menuHeight = len(self.options)*20
         self.mousePosX = GUI.mousePos[0] - self.viewport.x
         self.mousePosY = GUI.mousePos[1] - self.viewport.y
         
+        if isinstance(self.context, m.Weapon):
+            self.options = ['Equip', 'Info', 'Drop','Cancel']
+        else:
+            self.options = ['Use', 'Info', 'Drop','Cancel']
+            
+        self.menuHeight = len(self.options)*20
+            
     def update(self):
         self.startX  = self.viewport.x + self.mousePosX
         self.startY  = self.viewport.y + self.mousePosY
@@ -343,10 +345,12 @@ class ContextMenu(Menu):
             
             if self.options[selectY] == 'Use':
                 self.context.use(self.GUI.control.world.player)
-            if self.options[selectY] == 'Info':
+            elif self.options[selectY] == 'Equip':
+                self.context.equip(self.GUI.control.world.player)
+            elif self.options[selectY] == 'Info':
                 self.GUI.toggleInfoMenu(self.context)
-            if self.options[selectY] == 'Cancel':
-                self.GUI.toggleContextMenu()
+            elif self.options[selectY] == 'Cancel':
+                self.GUI.toggleContextMenu(self)
                 
             
     def drawText(self):
@@ -375,7 +379,7 @@ class InfoMenu(Menu):
         
         
         textObj.append(self.GUI.font.render(str(self.context.name), True, c.black))
-        textObj.append(self.GUI.font.render(str(self.context.effect), True, c.black))
+        # textObj.append(self.GUI.font.render(str(self.context.effect), True, c.black))
         textObj.append(self.GUI.font.render(str(self.context.weight), True, c.black))
         textObj.append(self.GUI.font.render(str(self.context.value), True, c.black))
         
@@ -433,7 +437,11 @@ class CharacterMenu(Menu):
             position += 20
     
         for equipment in self.player.equipped:
-            textObj = self.GUI.font.render(str(equipment), True, c.black)
+            if self.player.equipped[equipment]:
+                textObj = self.GUI.font.render(str(equipment) + ' : ' + str(self.player.equipped[equipment].name), True, c.black)
+            else:
+                textObj = self.GUI.font.render(str(equipment), True, c.black)
+                
             self.level.blit(textObj, (self.startX, self.startY + position))
             position += 20
     
