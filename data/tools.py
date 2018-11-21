@@ -112,13 +112,15 @@ class _State(object):
     def update(self, surface, keys, current_time):
         pass            
         
-def load_all_character(directory, colorkey=(255,0,255), accept=('.png', '.jpg', '.bmp')):
+def load_all_character(directory, colorkey=(0,0,0), accept=('.png', '.jpg', '.bmp')):
     graphics = {}
     for pic in os.listdir(directory):
         name, ext = os.path.splitext(pic)
         if ext.lower() in accept:
             img = pg.image.load(os.path.join(directory, pic))
-            img = pg.transform.scale(img, (c.tileSize, img.get_height()*int(c.tileSize/img.get_width())))
+            img = pg.transform.scale(img, (img.get_width()*3, img.get_height()*3)) # img.get_height()*int(c.tileSize/img.get_width())
+            # print(name)
+            # print(img.get_height()*int(c.tileSize/img.get_width()))
             if img.get_alpha():
                 img = img.convert_alpha()
             else:
@@ -127,6 +129,11 @@ def load_all_character(directory, colorkey=(255,0,255), accept=('.png', '.jpg', 
             graphics[name] = img
     return graphics
         
+        # self.image = setup.CFX['Character'].convert()
+        # self.image.set_colorkey((0,0,0)    
+    
+    
+    
 def load_all_gfx(directory, colorkey=(255,0,255), accept=('.png', '.jpg', '.bmp')):
     graphics = {}
     for pic in os.listdir(directory):

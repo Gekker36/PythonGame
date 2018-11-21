@@ -9,22 +9,24 @@ import time
 class Player(pg.sprite.Sprite):
     def __init__(self, location, world, direction=pg.K_RIGHT):
         pg.sprite.Sprite.__init__(self)
-        self.image = setup.CFX['Character']#.convert()
-        self.image.set_colorkey((255,255,255))
+        self.image = setup.CFX['Character'].convert()
+        self.image.set_colorkey((0,0,0))
         self.rect = self.image.get_rect(topleft = location)
         self.world = world
         self.true_pos = list(self.rect.center)
         
+        self.spritesheet = self.create_spritesheet_dict()
+        self.animationsheet = self.create_animation_dict()
+        
         self.remainder = [0, 0]  #Adjust rect in integers; save remainders.
         self.direction = direction
-        self.old_direction = None  #The Players previous direction every frame.
         self.direction_stack = []  #Held keys in the order they were pressed.
-        
+        self.state = 'Idle'
         
         self.inventory = m.Inventory()
         self.inventory.add_item(m.Consumable('Healthpotion'))
         self.inventory.add_item(m.Weapon('Sword'))
-        self.healthCurrent = 50
+        self.healthCurrent = 100
         self.healthMax = 100
         self.healthRegen = 1
         self.manaCurrent = 50
@@ -122,6 +124,8 @@ class Player(pg.sprite.Sprite):
                     self.inventory.add_item(l)
                 print(self.inventory.items)
         
+        self.animation()
+        
             
     def movement(self, obstacles, offset, i):
         """Move player and then check for collisions; adjust as necessary."""
@@ -132,6 +136,37 @@ class Player(pg.sprite.Sprite):
             self.rect[i] += (1 if offset<0 else -1)
             self.remainder[i] = 0
             
+    def create_spritesheet_dict(self):
+        spritesheet = {}
+        image_list = []
+        for sprite in setup.CFX:
+            spritesheet[sprite] = setup.CFX[sprite]
+        return spritesheet
+        
+    def create_animation_dict(self):
+        image_dict = self.spritesheet
+        up_walk_list    = [image_dict['up_stand'], image_dict['up_walk1'], image_dict['up_walk2']]
+        down_walk_list  = [image_dict['down_stand'], image_dict['down_walk1'], image_dict['down_walk2']]
+        right_walk_list = [image_dict['right_stand'], image_dict['right_walk1'], image_dict['right_walk2']]
+        left_walk_list  = [image_dict['left_stand'], image_dict['left_walk1'], image_dict['left_walk2']]
+        
+        direction_dict= {  'left': left_walk_list,
+                                'right': right_walk_list,
+                                'up': up_walk_list,
+                                'down': down_walk_list}
+                                
+        return direction_dict
+            
+    def animation(self):
+        if self.direction == 273:         #UP
+            self.image = self.animationsheet['up'][0]
+        elif self.direction == 274:       #DOWN
+            self.image = self.animationsheet['down'][0]
+        elif self.direction == 275:       #Right
+            self.image = self.animationsheet['right'][0]
+        elif self.direction == 276:       #LEFT
+            self.image = self.animationsheet['left'][0] 
+        
                 
     def draw(self, surface):
         surface.blit(self.image, self.rect)

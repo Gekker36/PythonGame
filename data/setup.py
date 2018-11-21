@@ -17,7 +17,7 @@ SCREEN_RECT = SCREEN.get_rect()
 
 
 
-CFX = tools.load_all_character(os.path.join('resources','graphics', 'characters'))
+CFX = tools.load_all_character(os.path.join('resources','graphics', 'characters', 'player' ))
 GFX = tools.load_all_gfx(os.path.join('resources', 'graphics', 'default'))
 TMX = tools.load_all_tmx(os.path.join('resources','graphics', 'tiles'))
 
